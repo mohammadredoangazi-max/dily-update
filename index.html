@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>মিম ইন্টারন্যাশনাল — ডেইলি আপডেট ট্র্যাকার</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@500;600;700&family=Noto+Sans+Bengali:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy-900:#12213B;
+  --navy-800:#1B2C4F;
+  --navy-700:#233B63;
+  --sand-100:#F7F3EA;
+  --sand-200:#EFE6D2;
+  --gold-500:#C89B3C;
+  --gold-600:#A97F2C;
+  --ink-900:#1C1B1F;
+  --ink-600:#5B5A62;
+  --green-600:#2E7D5B;
+  --green-100:#E3F2EA;
+  --amber-600:#B9700F;
+  --amber-100:#FBEEDD;
+  --red-600:#B23A32;
+  --red-100:#FBE7E5;
+  --white:#FFFFFF;
+  --radius:10px;
+  --shadow: 0 2px 14px rgba(18,33,59,0.10);
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--sand-100);color:var(--ink-900);font-family:'Noto Sans Bengali','Hind Siliguri',sans-serif;}
+.mono{font-family:'JetBrains Mono',monospace;}
+
+/* ---------- header ---------- */
+.topbar{background:linear-gradient(180deg,var(--navy-900),var(--navy-800));color:#fff;padding:18px 20px 14px;position:sticky;top:0;z-index:30;box-shadow:var(--shadow);border-bottom:3px solid var(--gold-500);}
+.topbar-row{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;}
+.brand{display:flex;flex-direction:column;gap:2px;}
+.brand .stamp{display:inline-flex;align-items:center;gap:8px;}
+.brand .stamp .mark{width:34px;height:34px;border:2px solid var(--gold-500);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-weight:600;font-size:13px;color:var(--gold-500);transform:rotate(-6deg);}
+.brand h1{font-family:'Hind Siliguri',sans-serif;font-weight:700;font-size:22px;margin:0;letter-spacing:.2px;}
+.brand p{margin:0;font-size:12.5px;color:#C9D2E3;}
+.report-date{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.08);padding:6px 10px;border-radius:8px;font-size:13px;}
+.report-date input{background:transparent;border:none;color:#fff;font-family:'JetBrains Mono',monospace;font-size:13px;}
+.report-date input::-webkit-calendar-picker-indicator{filter:invert(1);cursor:pointer;}
+
+.searchwrap{position:relative;flex:1;min-width:260px;max-width:420px;}
+.searchwrap input{width:100%;padding:10px 14px 10px 36px;border-radius:8px;border:1.5px solid var(--navy-700);background:rgba(255,255,255,.95);color:var(--ink-900);font-family:'JetBrains Mono',monospace;font-size:13.5px;outline:none;}
+.searchwrap input:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,155,60,.25);}
+.searchwrap .ico{position:absolute;left:11px;top:50%;transform:translateY(-50%);opacity:.55;font-size:14px;}
+.search-results{position:absolute;top:calc(100% + 6px);left:0;right:0;background:#fff;color:var(--ink-900);border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.25);max-height:360px;overflow:auto;z-index:50;display:none;}
+.search-results.show{display:block;}
+.sr-item{padding:10px 14px;border-bottom:1px solid var(--sand-200);cursor:pointer;}
+.sr-item:hover{background:var(--sand-100);}
+.sr-item .nm{font-weight:600;font-size:14px;}
+.sr-item .meta{font-size:12px;color:var(--ink-600);display:flex;gap:8px;flex-wrap:wrap;margin-top:2px;}
+.sr-empty{padding:16px;font-size:13px;color:var(--ink-600);text-align:center;}
+
+.topactions{display:flex;gap:8px;align-items:center;}
+.btn{border:none;border-radius:8px;padding:9px 14px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:transform .06s ease, opacity .15s;display:inline-flex;align-items:center;gap:6px;}
+.btn:active{transform:translateY(1px);}
+.btn-gold{background:var(--gold-500);color:var(--navy-900);}
+.btn-gold:hover{background:var(--gold-600);}
+.btn-ghost{background:rgba(255,255,255,.10);color:#fff;border:1px solid rgba(255,255,255,.25);}
+.btn-ghost:hover{background:rgba(255,255,255,.18);}
+.btn-navy{background:var(--navy-800);color:#fff;}
+.btn-navy:hover{background:var(--navy-700);}
+.btn-outline{background:#fff;color:var(--navy-800);border:1.4px solid var(--navy-800);}
+.btn-outline:hover{background:var(--sand-100);}
+.btn-danger{background:var(--red-100);color:var(--red-600);}
+.btn-danger:hover{background:#f5cfcb;}
+.btn-sm{padding:6px 9px;font-size:12px;border-radius:7px;}
+.btn[disabled]{opacity:.5;cursor:not-allowed;}
+
+/* ---------- tabs ---------- */
+.tabbar{display:flex;flex-wrap:wrap;gap:6px;padding:12px 20px 0;background:var(--sand-100);z-index:20;}
+.tab{flex:0 0 auto;padding:9px 14px;border-radius:8px 8px 0 0;background:var(--sand-200);color:var(--navy-800);font-size:13px;font-weight:600;cursor:pointer;border:1px solid transparent;border-bottom:none;white-space:nowrap;display:flex;align-items:center;gap:7px;}
+.tab .cnt{background:rgba(18,33,59,.12);border-radius:20px;padding:1px 7px;font-size:11px;font-family:'JetBrains Mono',monospace;}
+.tab.active{background:#fff;color:var(--navy-900);box-shadow:0 -2px 0 var(--gold-500) inset;border:1px solid var(--sand-200);}
+.tab.active .cnt{background:var(--gold-500);color:var(--navy-900);}
+
+/* ---------- content ---------- */
+.content{padding:16px 20px 60px;max-width:1400px;margin:0 auto;}
+.panel{background:#fff;border-radius:0 var(--radius) var(--radius) var(--radius);box-shadow:var(--shadow);overflow:hidden;}
+.panel-head{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--sand-200);gap:10px;flex-wrap:wrap;}
+.panel-head h2{margin:0;font-size:17px;font-family:'Hind Siliguri',sans-serif;color:var(--navy-900);}
+.panel-head .sub{font-size:12px;color:var(--ink-600);margin-top:2px;}
+
+table{width:100%;border-collapse:collapse;font-size:13px;}
+thead th{background:var(--navy-800);color:#fff;text-align:left;padding:10px 10px;font-size:11.5px;text-transform:uppercase;letter-spacing:.4px;font-weight:600;}
+tbody td{padding:9px 10px;border-bottom:1px solid var(--sand-200);vertical-align:middle;}
+tbody tr:nth-child(even){background:var(--sand-100);}
+tbody tr:hover{background:var(--amber-100);}
+.passport-cell{font-family:'JetBrains Mono',monospace;font-weight:600;letter-spacing:.5px;padding:3px 7px;border:1.3px dashed var(--gold-600);border-radius:6px;background:#fffdf7;display:inline-block;}
+.pill{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11.5px;font-weight:600;white-space:nowrap;}
+.pill-green{background:var(--green-100);color:var(--green-600);}
+.pill-amber{background:var(--amber-100);color:var(--amber-600);}
+.pill-red{background:var(--red-100);color:var(--red-600);}
+.pill-neutral{background:var(--sand-200);color:var(--ink-600);}
+.note-cell{max-width:220px;font-size:12.5px;color:var(--ink-600);}
+.actions-cell{display:flex;gap:6px;white-space:nowrap;}
+.sl-cell{color:var(--ink-600);font-family:'JetBrains Mono',monospace;font-size:12px;}
+.empty-row td{text-align:center;padding:34px;color:var(--ink-600);font-size:13.5px;}
+
+/* ---------- modal ---------- */
+.overlay{position:fixed;inset:0;background:rgba(18,33,59,.55);display:none;align-items:center;justify-content:center;z-index:100;padding:16px;}
+.overlay.show{display:flex;}
+.modal{background:#fff;border-radius:14px;max-width:640px;width:100%;max-height:90vh;overflow:auto;box-shadow:0 20px 50px rgba(0,0,0,.35);}
+.modal-head{padding:16px 20px;border-bottom:1px solid var(--sand-200);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:#fff;z-index:2;}
+.modal-head h3{margin:0;font-size:16.5px;font-family:'Hind Siliguri',sans-serif;color:var(--navy-900);}
+.modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--ink-600);line-height:1;}
+.modal-body{padding:18px 20px;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px 14px;}
+.form-grid .full{grid-column:1/-1;}
+label{display:block;font-size:12.5px;font-weight:600;color:var(--navy-800);margin-bottom:4px;}
+input,select,textarea{width:100%;padding:9px 10px;border:1.4px solid var(--sand-200);border-radius:8px;font-family:inherit;font-size:13.5px;background:var(--sand-100);color:var(--ink-900);outline:none;}
+input:focus,select:focus,textarea:focus{border-color:var(--gold-500);background:#fff;box-shadow:0 0 0 3px rgba(200,155,60,.18);}
+textarea{resize:vertical;min-height:56px;}
+.modal-foot{padding:14px 20px 18px;display:flex;justify-content:flex-end;gap:10px;border-top:1px solid var(--sand-200);}
+.hint{font-size:11.5px;color:var(--ink-600);margin-top:3px;}
+
+.history-list{display:flex;flex-direction:column;gap:10px;margin-top:6px;}
+.hist-item{border:1px solid var(--sand-200);border-radius:9px;padding:10px 12px;background:var(--sand-100);}
+.hist-item .hd{display:flex;justify-content:space-between;font-size:12px;color:var(--navy-800);font-weight:700;margin-bottom:4px;}
+.hist-item .bd{font-size:12.5px;color:var(--ink-600);}
+.hist-empty{text-align:center;color:var(--ink-600);font-size:13px;padding:20px;}
+
+/* ---------- toast ---------- */
+#toastwrap{position:fixed;bottom:18px;right:18px;z-index:200;display:flex;flex-direction:column;gap:8px;}
+.toast{background:var(--navy-900);color:#fff;padding:11px 16px;border-radius:9px;font-size:13px;box-shadow:0 8px 20px rgba(0,0,0,.3);border-left:4px solid var(--gold-500);opacity:0;transform:translateY(8px);transition:all .25s ease;}
+.toast.show{opacity:1;transform:translateY(0);}
+.toast.error{border-left-color:var(--red-600);}
+
+.loading-screen{position:fixed;inset:0;background:var(--navy-900);color:#fff;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;z-index:500;font-family:'Hind Siliguri',sans-serif;}
+.loading-screen.hide{display:none;}
+.spinner{width:32px;height:32px;border:3px solid rgba(255,255,255,.25);border-top-color:var(--gold-500);border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+.storage-note{font-size:11.5px;color:var(--ink-600);padding:10px 20px 0;max-width:1400px;margin:0 auto;}
+.storage-note b{color:var(--navy-800);}
+
+@media(max-width:720px){
+  .form-grid{grid-template-columns:1fr;}
+  thead th{position:static;}
+  .topbar-row{flex-direction:column;}
+  .searchwrap{max-width:100%;}
+}
+
+/* ---------- all-offices view ---------- */
+.all-office-block{margin-bottom:26px;}
+.all-office-block h3{font-family:'Hind Siliguri',sans-serif;color:var(--navy-900);background:var(--sand-200);padding:9px 14px;border-radius:8px;margin:0 0 8px;font-size:15px;display:flex;justify-content:space-between;align-items:center;}
+.all-office-block h3 .cnt2{font-family:'JetBrains Mono',monospace;font-size:12px;background:var(--gold-500);color:var(--navy-900);padding:2px 9px;border-radius:20px;}
+
+/* ---------- print ---------- */
+@media print{
+  .topbar, .tabbar, .panel-head .btn, #btnAdd, .actions-cell, .storage-note, .overlay, #toastwrap, .loading-screen{display:none !important;}
+  body{background:#fff;}
+  .content{padding:0;max-width:100%;}
+  .panel{box-shadow:none;border-radius:0;}
+  .panel-head{border-bottom:2px solid var(--navy-900);}
+  table{font-size:11px;}
+  thead th{background:var(--navy-900) !important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .pill{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .passport-cell{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .all-office-block{page-break-inside:avoid;}
+  .print-header{display:block !important;text-align:center;margin-bottom:14px;}
+}
+.print-header{display:none;}
+.print-header h2{font-family:'Hind Siliguri',sans-serif;color:var(--navy-900);margin:0 0 4px;}
+.print-header p{margin:0;color:var(--ink-600);font-size:12px;}
+</style>
+</head>
+<body>
+
+<div class="loading-screen" id="loadingScreen">
+  <div class="spinner"></div>
+  <div>ডেটা লোড হচ্ছে…</div>
+</div>
+
+<div class="topbar">
+  <div class="topbar-row">
+    <div class="brand">
+      <div class="stamp">
+        <div class="mark">MI<br></div>
+        <div>
+          <h1>মিম ইন্টারন্যাশনাল</h1>
+          <p>ডেইলি আপডেট ট্র্যাকার — পাসপোর্ট/এজেন্সি অফিস ম্যানেজমেন্ট সিস্টেম</p>
+        </div>
+      </div>
+    </div>
+    <div class="searchwrap">
+      <span class="ico">🔍</span>
+      <input type="text" id="globalSearch" placeholder="পাসপোর্ট নম্বর বা নাম দিয়ে সার্চ করুন…" autocomplete="off">
+      <div class="search-results" id="searchResults"></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end;">
+      <div class="report-date">
+        📅 <span>রিপোর্ট তারিখ:</span>
+        <input type="date" id="reportDate">
+      </div>
+      <div class="topactions">
+        <button class="btn btn-ghost btn-sm" id="btnDrive">📊 Sheet Sync: <span id="driveStatusLabel">সংযুক্ত নয়</span></button>
+        <button class="btn btn-ghost btn-sm" id="btnExport">⬇ ব্যাকআপ Export</button>
+        <label class="btn btn-ghost btn-sm" style="cursor:pointer;">
+          ⬆ Import
+          <input type="file" id="importFile" accept="application/json" style="display:none;">
+        </label>
+        <button class="btn btn-gold btn-sm" id="btnExportCsv">📄 CSV</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="storage-note">এই ডেটা স্বয়ংক্রিয়ভাবে ক্লাউডে সংরক্ষিত হয় এবং <b>সব ব্যবহারকারীর সাথে শেয়ার করা থাকে</b> — যে কেউ এই টুল খুললে একই ডেটা দেখবে ও আপডেট করতে পারবে। Google Drive-এ আলাদা ব্যাকআপ রাখতে ডানপাশের "Export" বাটনে ফাইল ডাউনলোড করে আপনার Drive-এ আপলোড করুন।</div>
+
+<div class="tabbar" id="tabbar"></div>
+
+<div class="content">
+  <div class="panel" id="singleOfficePanel">
+    <div class="print-header">
+      <h2>মিম ইন্টারন্যাশনাল — ডেইলি আপডেট রিপোর্ট</h2>
+      <p id="printDateLine"></p>
+    </div>
+    <div class="panel-head">
+      <div>
+        <h2 id="officeTitle">—</h2>
+        <div class="sub" id="officeSub">—</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-outline" id="btnPrint">🖨️ প্রিন্ট করুন</button>
+        <button class="btn btn-navy" id="btnAdd">＋ নতুন এন্ট্রি যোগ করুন</button>
+      </div>
+    </div>
+    <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:36px;">SL</th>
+            <th>NAME</th>
+            <th>PASSPORT NO</th>
+            <th>DESTINATION</th>
+            <th>WAKALA</th>
+            <th>CURRENT STATUS</th>
+            <th>AGENT</th>
+            <th>NOTE</th>
+            <th style="width:150px;">ACTION</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- All offices combined view (for printing everything at once) -->
+  <div class="panel" id="allOfficesPanel" style="display:none;margin-top:0;">
+    <div class="print-header">
+      <h2>মিম ইন্টারন্যাশনাল — সকল অফিসের ডেইলি আপডেট রিপোর্ট</h2>
+      <p id="printDateLineAll"></p>
+    </div>
+    <div class="panel-head">
+      <div>
+        <h2>সব অফিস — একসাথে ভিউ</h2>
+        <div class="sub">সবগুলো অফিসের তালিকা একসাথে — প্রিন্ট করলে সব একবারে ছাপা হবে</div>
+      </div>
+      <button class="btn btn-outline" id="btnPrintAll">🖨️ সব প্রিন্ট করুন</button>
+    </div>
+    <div style="padding:16px;" id="allOfficesBody"></div>
+  </div>
+</div>
+
+<!-- Add/Edit Modal -->
+<div class="overlay" id="editOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="editModalTitle">নতুন এন্ট্রি</h3>
+      <button class="modal-close" id="closeEdit">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="full">
+          <label>অফিস</label>
+          <select id="f_office"></select>
+        </div>
+        <div>
+          <label>নাম (NAME) *</label>
+          <input type="text" id="f_name" placeholder="যেমন: MST SHAHANAZ BEGUM">
+        </div>
+        <div>
+          <label>পাসপোর্ট নম্বর (PASSPORT NO) *</label>
+          <input type="text" id="f_passport" class="mono" placeholder="যেমন: A09604711" style="text-transform:uppercase;">
+        </div>
+        <div>
+          <label>গন্তব্য (DESTINATION)</label>
+          <input type="text" id="f_destination" placeholder="যেমন: DAMMAM / RIYADH / MADINAH">
+        </div>
+        <div>
+          <label>ওয়াকালা (WAKALA)</label>
+          <select id="f_wakala">
+            <option value="">— নির্বাচন করুন —</option>
+            <option value="PAID">PAID</option>
+            <option value="UNPAID">UNPAID</option>
+          </select>
+        </div>
+        <div>
+          <label>বর্তমান স্ট্যাটাস (BMET/TC)</label>
+          <input type="text" id="f_status" placeholder="যেমন: TC OK / NEED TC / TC SUB">
+        </div>
+        <div>
+          <label>এজেন্ট (AGENT)</label>
+          <input type="text" id="f_agent" placeholder="এজেন্টের নাম">
+        </div>
+        <div class="full">
+          <label>নোট (NOTE)</label>
+          <textarea id="f_note" placeholder="বিস্তারিত নোট / স্ট্যাম্পিং ডেট ইত্যাদি"></textarea>
+        </div>
+        <div>
+          <label>রিটার্ন হয়েছে কি?</label>
+          <select id="f_returnStatus">
+            <option value="">— নির্বাচন করুন —</option>
+            <option value="চলমান">চলমান (প্রসেসে)</option>
+            <option value="রিটার্ন এসেছে">রিটার্ন এসেছে</option>
+            <option value="বাতিল">বাতিল</option>
+          </select>
+        </div>
+        <div>
+          <label>রিটার্ন / আসল তারিখ</label>
+          <input type="date" id="f_returnDate">
+        </div>
+        <div>
+          <label>জরিমানা (FINE)</label>
+          <input type="text" id="f_fine" placeholder="যেমন: 500 SAR">
+        </div>
+        <div class="full">
+          <label>এই আপডেটের কারণ / মন্তব্য (হিস্টোরি লগে যোগ হবে)</label>
+          <input type="text" id="f_updateNote" placeholder="যেমন: আজ TC OK হয়েছে, স্ট্যাম্পিং সম্পন্ন">
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" id="cancelEdit">বাতিল</button>
+      <button class="btn btn-navy" id="saveEdit">💾 সংরক্ষণ করুন</button>
+    </div>
+  </div>
+</div>
+
+<!-- History Modal -->
+<div class="overlay" id="histOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="histTitle">আপডেট হিস্টোরি</h3>
+      <button class="modal-close" id="closeHist">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="history-list" id="histList"></div>
+    </div>
+  </div>
+</div>
+
+<div id="toastwrap"></div>
+
+<!-- Google Sheet Sync Modal (via Apps Script Web App) -->
+<div class="overlay" id="driveOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>📊 Google Sheet লাইভ সিঙ্ক (Apps Script)</h3>
+      <button class="modal-close" id="closeDrive">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--ink-600);line-height:1.6;">
+        নিচের ধাপ অনুযায়ী আপনার Google Sheet-এ একটা Apps Script বসিয়ে "Web App" হিসেবে ডিপ্লয় করুন, তারপর যে লিংক পাবেন সেটা এখানে বসান। এরপর থেকে এই টুলে যা কিছু আপডেট হবে, তা সরাসরি আপনার Sheet-এ চলে যাবে — কোনো সাইন-ইন লাগবে না।
+      </p>
+      <div style="margin:14px 0;">
+        <label>Apps Script Web App URL</label>
+        <input type="text" id="sheetUrl" placeholder="https://script.google.com/macros/s/xxxxx/exec">
+        <div class="hint">নিচের ধাপ অনুসরণ করে এই লিংকটা বের করুন।</div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn btn-navy" id="btnSaveClientId">💾 লিংক সংরক্ষণ করুন</button>
+        <button class="btn btn-outline" id="btnManualDriveSave" disabled>⬆ এখনই সিঙ্ক করুন</button>
+      </div>
+      <div id="driveStatusBox" style="margin-top:14px;padding:10px 12px;background:var(--sand-100);border-radius:8px;font-size:13px;">সংযুক্ত নয়</div>
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-600);margin-top:12px;">
+        <input type="checkbox" id="driveAutoSave" checked style="width:auto;"> প্রতিটি আপডেটে অটো-সিঙ্ক চালু রাখুন
+      </label>
+
+      <details open style="margin-top:18px;">
+        <summary style="cursor:pointer;font-weight:600;color:var(--navy-800);font-size:13px;">ধাপে ধাপে — Apps Script কীভাবে বসাবেন</summary>
+        <ol style="font-size:12.5px;color:var(--ink-600);line-height:1.9;padding-inline-start:18px;">
+          <li>আপনার Google Sheet খুলুন → মেনু থেকে <strong>Extensions → Apps Script</strong> ক্লিক করুন (আপনার স্ক্রিনশটে যেটা দেখা যাচ্ছে)।</li>
+          <li>যে কোড এডিটর খুলবে, ওখানে যা লেখা আছে সব মুছে নিচের কোডটা পেস্ট করুন (নিচে দেওয়া আছে)।</li>
+          <li>উপরে সেভ (💾 disk আইকন) চাপুন, প্রজেক্টের একটা নাম দিন (যেমন: MIM Tracker Sync)।</li>
+          <li>উপরে ডানদিকে নীল <strong>Deploy → New deployment</strong> বাটনে ক্লিক করুন।</li>
+          <li>গিয়ার/সেটিংস আইকনে ক্লিক করে Type থেকে <strong>Web app</strong> বেছে নিন।</li>
+          <li>"Execute as" → <strong>Me</strong>, "Who has access" → <strong>Anyone</strong> সিলেক্ট করুন। তারপর <strong>Deploy</strong> চাপুন।</li>
+          <li>প্রথমবার একটা permission চাইবে — নিজের অ্যাকাউন্ট বেছে "Advanced → Go to (project) → Allow" করুন।</li>
+          <li>যে <strong>Web app URL</strong> পাবেন (অনেকটা এমন: <span class="mono">https://script.google.com/macros/s/.../exec</span>), সেটা কপি করে উপরের বক্সে বসিয়ে "লিংক সংরক্ষণ করুন" চাপুন।</li>
+        </ol>
+        <p style="font-size:12px;color:var(--ink-600);">💡 প্রতিবার কোড এডিট করলে আবার নতুন করে Deploy করতে হবে না — Deploy বাটনের পাশে ✏️ (Manage deployments) থেকে "Edit → New version" করে আগের একই লিংক রেখেই আপডেট করা যায়।</p>
+      </details>
+
+      <details style="margin-top:12px;">
+        <summary style="cursor:pointer;font-weight:600;color:var(--navy-800);font-size:13px;">Apps Script কোড (কপি করুন)</summary>
+        <pre style="background:var(--navy-900);color:#dfe8f7;padding:12px;border-radius:8px;font-size:11px;overflow:auto;white-space:pre;line-height:1.6;margin-top:8px;" id="appsScriptCode">function doGet(e) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Backup') || SpreadsheetApp.getActiveSpreadsheet().insertSheet('Backup');
+  var data = sheet.getRange(1,1).getValue();
+  return ContentService.createTextOutput(data || '{}').setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
+  var backupSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Backup') || SpreadsheetApp.getActiveSpreadsheet().insertSheet('Backup');
+  try {
+    var raw = e.postData.contents;
+    backupSheet.getRange(1,1).setValue(raw);
+    var data = JSON.parse(raw);
+    writeReadableSheet(data.records || []);
+    backupSheet.getRange(1,2).setValue('OK - ' + new Date());
+  } catch (err) {
+    backupSheet.getRange(1,2).setValue('ERROR: ' + err.message);
+  }
+  return ContentService.createTextOutput(JSON.stringify({status:'ok'})).setMimeType(ContentService.MimeType.JSON);
+}
+
+function writeReadableSheet(records) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('All Records') || ss.insertSheet('All Records');
+  sheet.clear();
+  var header = ['OFFICE','SL','NAME','PASSPORT','DESTINATION','WAKALA','STATUS','AGENT','NOTE','RETURN STATUS','RETURN DATE','FINE','UPDATED AT'];
+  sheet.appendRow(header);
+  var counters = {};
+  records.forEach(function(r){
+    counters[r.office] = (counters[r.office] || 0) + 1;
+    sheet.appendRow([r.office, counters[r.office], r.name, r.passport, r.destination, r.wakala, r.status, r.agent, r.note, r.returnStatus, r.returnDate, r.fine, r.updatedAt]);
+  });
+}</pre>
+        <button class="btn btn-outline btn-sm" id="btnCopyScript" style="margin-top:8px;">📋 কোড কপি করুন</button>
+        <p style="font-size:12px;color:var(--ink-600);margin-top:8px;">✅ সিঙ্ক ঠিকমতো হচ্ছে কিনা যাচাই করতে: Sheet-এ "Backup" ট্যাবে যান, <strong>B1 সেল</strong> দেখুন — "OK - তারিখ" লেখা থাকলে সিঙ্ক সফল, "ERROR: ..." লেখা থাকলে সেই বার্তাটা স্ক্রিনশট দিন।</p>
+      </details>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ================= CONFIG ================= */
+const OFFICES = [
+  {id:'alsharqia',   name:'ALSHARQIA OFFICE'},
+  {id:'ingaz',       name:'INGAZ COMPANY OFFICE'},
+  {id:'service_eng', name:'SERVICE ENGENERING OFFICE'},
+  {id:'rawad_najran',name:'RAWAD NAJRAN OFFICE'},
+  {id:'alqafieai',   name:'AL QAFIEAI COMPANY OFFICE'},
+  {id:'asda_alraha', name:'ASDA ALRAHA OFFICE'},
+  {id:'female_mim',  name:'FEMALE PROCESSING MIM'},
+];
+const RECORDS_KEY = 'agency_records_v1';
+const META_KEY = 'agency_meta_v1';
+
+let records = [];
+let meta = {reportDate: todayISO()};
+let activeOffice = OFFICES[0].id;
+let editingId = null;
+
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+function uid(){ return 'r_' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+/* ================= SEED DATA (from 7/8/2026 sheet) ================= */
+function seedRecords(){
+  const mk = (office,name,passport,destination,wakala,status,agent,note,updatedAt)=>({
+    id:uid(), office, name, passport, destination, wakala, status, agent, note,
+    returnStatus:'', returnDate:'', fine:'',
+    updatedAt: updatedAt||'', createdAt: todayISO(),
+    history:[{date:updatedAt||todayISO(), status, note:'প্রাথমিক তথ্য যোগ করা হয়েছে (7/8/2026 শিট থেকে)'}]
+  });
+  return [
+    mk('alsharqia','MST SHAHANAZ BEGUM','A09604711','DAMMAM','PAID','TC OK','JAMAL VAI AL IQSA','FOR BMET-01-07-2026 TRN. START','1/4/26'),
+    mk('alsharqia','SEFALI BEGUM','A21319058','DAMMAM','PAID','TC NEED','IMRAN VAI','NEED TICKET:','12/5/26'),
+    mk('alsharqia','TANJINA AKTHER','A18854716','DAMMAM','PAID','TC OK','AKLAS MIAH','NEED TICKET:','12/5/26'),
+    mk('alsharqia','MISS REZVI AKTER MUKTA','A09522524','DAMMAM','PAID','TC OK','RUNU HOWLADER','BMET SUB-600106','21.05.2026'),
+    mk('alsharqia','LAKHI AKTER_NEW','A19159085','DAMMAM','PAID','TC-15-07-','MARUF VAI','NO MC SLIP/ PC OK','13.06.2026'),
+    mk('alsharqia','MST RUZINA BEGUM','A21359838','DAMMAM','PAID','TC OK','ASHIQ SYL','BMET SUB-600106','14.06.2027'),
+    mk('alsharqia','MST SABINA YASMIN','A20752673','DAMMAM','PAID','TC OK','NOOR VAI','STAMPING DATE: 08-07-2026 / PC OK','15.06.2026'),
+    mk('alsharqia','ANCHANA BEGUM','A21229645','DAMMAM','PAID','TC OK','HASAN ALI','BMET SUB-600106','16.06.2026'),
+    mk('alsharqia','MOST ARZU','A19037888','DAMMAM','UNPAID','TC NEED','NOOR VAI','NEED SLIP / PC OK','29.06.2026'),
+    mk('alsharqia','MST AISHA KHATUN_NEW','A13848156','DAMMAM','UNPAID','TC NEED','SOFIQ VAI','STAMPING DATE: 08-07-2026 / PC OK','29.06.2026'),
+
+    mk('ingaz','JUNU ARA BEGUM_EXP','A18957611','RIYADH','PAID','TC OK','ASHIQ VAI SYL','STAMPING DATE: 08-07-2026 / PC OK','20.05.2026'),
+    mk('ingaz','HALEMA KHATUN_EXP','A19955207','RIYADH','PAID','TC OK','MARUF VAI','NEED TICKET:','20.05.2026'),
+    mk('ingaz','MST KADIJA BEGUM_EXP','A12833919','RIYADH','PAID','TC OK','NOOR VAI','NEED TICKET:','21.05.2026'),
+    mk('ingaz','POLY BEGUM','A16326887','RIYADH','PAID','TC OK','NOOR VAI','NEED TICKET:','12.06.2026'),
+    mk('ingaz','JARNA AKTER','EN0200290','RIYADH','PAID','NEED TC','MARUF VAI','STAMPING DATE: 15-07-2026 / PC SUB','15.06.2026'),
+    mk('ingaz','SAJMIN BEGUM','A14249950','RIYADH','PAID','NEED TC','ASHIQ VAI SYL','STAMPING DATE: 15-07-2026 / PC SUB','16.06.2026'),
+    mk('ingaz','MST JHUMA AKTER','A16115072','RIYADH','PAID','TC OK','HASAN ALI','STAMPING DATE: 08-07-2026 / PC OK','21.06.2026'),
+    mk('ingaz','TASLIMA BEGUM','A22535648','RIYADH','UNPAID','NEED TC','RUHUL AMIN BB','NEED MC SLIP / PC SUB.','29.06.2026'),
+    mk('ingaz','TANIA BEGUM_EXP','A08396009','RIYADH','UNPAID','NEED TC','HOSSEN MAMA','NEED MC SLIP / PC OK','6/7/26'),
+
+    mk('service_eng','TAMANA AKTER','A09471997','MADINAH','PAID','TC - NEED','SATIR MIAH','NEED BMET_TC NOT ONLINE','24/05/2026'),
+    mk('service_eng','MAHAMUDA BEGUM','A05734814','MADINAH','PAID','TC OK','PITOM INTER','NEED TICKET:','1/6/26'),
+    mk('service_eng','NAEMA AKTER','A05896001','','PAID','TC OK','RUHUL AMIN BB','NEED TICKET:','3/6/26'),
+    mk('service_eng','MST SHIULY AKTER','A21977845','','PAID','TC OK','RUHUL AMIN BB','BMET SUB-600106','6/6/26'),
+    mk('service_eng','TASLIMA','A19448506','','UNPAID','TC OK','MADINAH OFFICE','NEED MC SLIP / PC OK','22/06/2026'),
+    mk('service_eng','MST POPI AKTER','EK0711427','','UNPAID','TC OK','RUHUL AMIN BB','NEED MC SLIP / PC SUB.','4/7/26'),
+    mk('service_eng','SHEIKH RASHEDA','A17478774','','UNPAID','1 MONTH','RUHUL AMIN BB','NEED MC SLIP / PC OK','4/7/26'),
+
+    mk('alqafieai','MST RUFIA BEGUM_EXP','A09102184','','UNPAID','TC OK','PRITOM OFFICE','STAMPING DATE -05-07-2026 / PC OK','12/5/26'),
+    mk('alqafieai','THITY MONI','A09735512','RIYADH','PAID','TC OK','KAMRUL VAI A.H','NEED BMET_TC PROBLEM','24/05/2026'),
+    mk('alqafieai','NAJIFA AKTER','A19425238','DAMMAM','PAID','TC OK','PRITOM OFFICE','NEED TICKET:','24/05/2026'),
+    mk('alqafieai','BINU BEGUM','A11632961','','UNPAID','TC OK','KHOKON VAI','NEED MC SLIP / PC OK','25/06/2026'),
+
+    mk('female_mim','FATEMA AKTER','A06714991','','','TC-SUB','SALMAN VAI','NEED SLIP / PC SUB.',''),
+    mk('female_mim','LIMA AKTER','A17731048','','','TC SUB','YONUS NANA','STAMPING DATE: / PC OK',''),
+  ];
+}
+
+/* ================= STORAGE ================= */
+async function loadAll(){
+  try{
+    const r = await window.storage.get(RECORDS_KEY, true);
+    records = r ? JSON.parse(r.value) : seedRecords();
+    if(!r){ await saveRecords(); }
+  }catch(e){
+    records = seedRecords();
+    try{ await saveRecords(); }catch(e2){}
+  }
+  try{
+    const m = await window.storage.get(META_KEY, true);
+    meta = m ? JSON.parse(m.value) : {reportDate: todayISO()};
+  }catch(e){
+    meta = {reportDate: todayISO()};
+  }
+}
+async function saveRecords(){
+  try{
+    const res = await window.storage.set(RECORDS_KEY, JSON.stringify(records), true);
+    if(!res) throw new Error('no result');
+    driveAutoSaveIfOn();
+    return true;
+  }catch(e){
+    toast('সংরক্ষণ ব্যর্থ হয়েছে, আবার চেষ্টা করুন', 'error');
+    return false;
+  }
+}
+async function saveMeta(){
+  try{ await window.storage.set(META_KEY, JSON.stringify(meta), true); driveAutoSaveIfOn(); }catch(e){}
+}
+
+/* ================= RENDER ================= */
+function renderTabs(){
+  const bar = document.getElementById('tabbar');
+  bar.innerHTML = '';
+  OFFICES.forEach(o=>{
+    const count = records.filter(r=>r.office===o.id).length;
+    const el = document.createElement('div');
+    el.className = 'tab' + (o.id===activeOffice ? ' active':'');
+    el.innerHTML = `<span>${o.name}</span><span class="cnt">${count}</span>`;
+    el.onclick = ()=>{ activeOffice = o.id; renderTabs(); renderTable(); };
+    bar.appendChild(el);
+  });
+  const allTab = document.createElement('div');
+  allTab.className = 'tab' + (activeOffice==='all' ? ' active':'');
+  allTab.innerHTML = `<span>📋 সব অফিস</span><span class="cnt">${records.length}</span>`;
+  allTab.onclick = ()=>{ activeOffice = 'all'; renderTabs(); renderTable(); };
+  bar.appendChild(allTab);
+}
+
+function renderAllOffices(){
+  const wrap = document.getElementById('allOfficesBody');
+  wrap.innerHTML = '';
+  OFFICES.forEach(o=>{
+    const list = records.filter(r=>r.office===o.id);
+    const block = document.createElement('div');
+    block.className = 'all-office-block';
+    let rowsHtml = '';
+    if(list.length===0){
+      rowsHtml = `<tr class="empty-row"><td colspan="8">কোনো এন্ট্রি নেই</td></tr>`;
+    }else{
+      rowsHtml = list.map((r,idx)=>`
+        <tr>
+          <td class="sl-cell">${idx+1}</td>
+          <td><strong>${escapeHtml(r.name||'—')}</strong></td>
+          <td><span class="passport-cell">${escapeHtml((r.passport||'—').toUpperCase())}</span></td>
+          <td>${escapeHtml(r.destination||'—')}</td>
+          <td>${r.wakala ? `<span class="pill ${statusClass(r.wakala)}">${r.wakala}</span>` : '—'}</td>
+          <td>${r.status ? `<span class="pill ${statusClass(r.status)}">${escapeHtml(r.status)}</span>` : '—'}</td>
+          <td>${escapeHtml(r.agent||'—')}</td>
+          <td class="note-cell">${escapeHtml(r.note||'—')}</td>
+        </tr>`).join('');
+    }
+    block.innerHTML = `
+      <h3>${o.name} <span class="cnt2">${list.length} এন্ট্রি</span></h3>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead><tr>
+            <th style="width:32px;">SL</th><th>NAME</th><th>PASSPORT NO</th><th>DESTINATION</th>
+            <th>WAKALA</th><th>CURRENT STATUS</th><th>AGENT</th><th>NOTE</th>
+          </tr></thead>
+          <tbody>${rowsHtml}</tbody>
+        </table>
+      </div>`;
+    wrap.appendChild(block);
+  });
+}
+
+function statusClass(text){
+  if(!text) return 'pill-neutral';
+  const t = text.toUpperCase();
+  if(t.includes('UNPAID') || t.includes('বাতিল')) return 'pill-red';
+  if(t.includes('NEED') || t.includes('SUB') || t.includes('MONTH')) return 'pill-amber';
+  if(t.includes('OK') || t.includes('PAID') || t.includes('এসেছে')) return 'pill-green';
+  return 'pill-neutral';
+}
+
+function renderTable(){
+  document.getElementById('printDateLine').textContent = 'রিপোর্ট তারিখ: ' + (meta.reportDate||'—');
+  document.getElementById('printDateLineAll').textContent = 'রিপোর্ট তারিখ: ' + (meta.reportDate||'—');
+
+  if(activeOffice==='all'){
+    document.getElementById('singleOfficePanel').style.display = 'none';
+    document.getElementById('allOfficesPanel').style.display = '';
+    renderAllOffices();
+    return;
+  }
+  document.getElementById('singleOfficePanel').style.display = '';
+  document.getElementById('allOfficesPanel').style.display = 'none';
+
+  const office = OFFICES.find(o=>o.id===activeOffice);
+  document.getElementById('officeTitle').textContent = office.name;
+  const list = records.filter(r=>r.office===activeOffice);
+  document.getElementById('officeSub').textContent = `মোট এন্ট্রি: ${list.length} · রিপোর্ট তারিখ: ${meta.reportDate||'—'}`;
+
+  const tbody = document.getElementById('tableBody');
+  tbody.innerHTML = '';
+  if(list.length===0){
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="9">এই অফিসে এখনো কোনো এন্ট্রি নেই। "নতুন এন্ট্রি যোগ করুন" চেপে শুরু করুন।</td></tr>`;
+    return;
+  }
+  list.forEach((r,idx)=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="sl-cell">${idx+1}</td>
+      <td><strong>${escapeHtml(r.name||'—')}</strong></td>
+      <td><span class="passport-cell">${escapeHtml((r.passport||'—').toUpperCase())}</span></td>
+      <td>${escapeHtml(r.destination||'—')}</td>
+      <td>${r.wakala ? `<span class="pill ${statusClass(r.wakala)}">${r.wakala}</span>` : '—'}</td>
+      <td>${r.status ? `<span class="pill ${statusClass(r.status)}">${escapeHtml(r.status)}</span>` : '—'}</td>
+      <td>${escapeHtml(r.agent||'—')}</td>
+      <td class="note-cell">${escapeHtml(r.note||'—')}</td>
+      <td class="actions-cell">
+        <button class="btn btn-outline btn-sm" data-act="edit" data-id="${r.id}">✏️</button>
+        <button class="btn btn-ghost btn-sm" data-act="hist" data-id="${r.id}" style="background:var(--sand-200);color:var(--navy-800);">🕒</button>
+        <button class="btn btn-danger btn-sm" data-act="del" data-id="${r.id}">🗑️</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  tbody.querySelectorAll('button[data-act]').forEach(btn=>{
+    btn.onclick = ()=>{
+      const id = btn.getAttribute('data-id');
+      const act = btn.getAttribute('data-act');
+      if(act==='edit') openEdit(id);
+      if(act==='del') deleteRecord(id);
+      if(act==='hist') openHistory(id);
+    };
+  });
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* ================= EDIT MODAL ================= */
+function fillOfficeSelect(){
+  const sel = document.getElementById('f_office');
+  sel.innerHTML = OFFICES.map(o=>`<option value="${o.id}">${o.name}</option>`).join('');
+}
+
+function openAdd(){
+  editingId = null;
+  document.getElementById('editModalTitle').textContent = 'নতুন এন্ট্রি যোগ করুন';
+  ['f_name','f_passport','f_destination','f_status','f_agent','f_note','f_returnDate','f_fine','f_updateNote'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('f_wakala').value='';
+  document.getElementById('f_returnStatus').value='';
+  document.getElementById('f_office').value = activeOffice;
+  document.getElementById('editOverlay').classList.add('show');
+}
+
+function openEdit(id){
+  const r = records.find(x=>x.id===id);
+  if(!r) return;
+  editingId = id;
+  document.getElementById('editModalTitle').textContent = 'এন্ট্রি এডিট করুন';
+  document.getElementById('f_office').value = r.office;
+  document.getElementById('f_name').value = r.name||'';
+  document.getElementById('f_passport').value = r.passport||'';
+  document.getElementById('f_destination').value = r.destination||'';
+  document.getElementById('f_wakala').value = r.wakala||'';
+  document.getElementById('f_status').value = r.status||'';
+  document.getElementById('f_agent').value = r.agent||'';
+  document.getElementById('f_note').value = r.note||'';
+  document.getElementById('f_returnStatus').value = r.returnStatus||'';
+  document.getElementById('f_returnDate').value = r.returnDate||'';
+  document.getElementById('f_fine').value = r.fine||'';
+  document.getElementById('f_updateNote').value = '';
+  document.getElementById('editOverlay').classList.add('show');
+}
+
+function closeEditModal(){ document.getElementById('editOverlay').classList.remove('show'); }
+
+async function saveEditForm(){
+  const name = document.getElementById('f_name').value.trim();
+  const passport = document.getElementById('f_passport').value.trim().toUpperCase();
+  if(!name || !passport){
+    toast('নাম এবং পাসপোর্ট নম্বর আবশ্যক', 'error');
+    return;
+  }
+  const office = document.getElementById('f_office').value;
+  const destination = document.getElementById('f_destination').value.trim();
+  const wakala = document.getElementById('f_wakala').value;
+  const status = document.getElementById('f_status').value.trim();
+  const agent = document.getElementById('f_agent').value.trim();
+  const note = document.getElementById('f_note').value.trim();
+  const returnStatus = document.getElementById('f_returnStatus').value;
+  const returnDate = document.getElementById('f_returnDate').value;
+  const fine = document.getElementById('f_fine').value.trim();
+  const updateNote = document.getElementById('f_updateNote').value.trim();
+  const now = todayISO();
+
+  if(editingId){
+    const r = records.find(x=>x.id===editingId);
+    if(r){
+      Object.assign(r, {office,name,passport,destination,wakala,status,agent,note,returnStatus,returnDate,fine,updatedAt:now});
+      r.history = r.history || [];
+      r.history.unshift({date:now, status, note: updateNote || 'তথ্য আপডেট করা হয়েছে', returnStatus, fine});
+    }
+  }else{
+    records.push({
+      id:uid(), office,name,passport,destination,wakala,status,agent,note,
+      returnStatus,returnDate,fine, updatedAt:now, createdAt:now,
+      history:[{date:now, status, note: updateNote || 'নতুন এন্ট্রি তৈরি করা হয়েছে', returnStatus, fine}]
+    });
+  }
+
+  const ok = await saveRecords();
+  if(ok){
+    closeEditModal();
+    activeOffice = office;
+    renderTabs();
+    renderTable();
+    toast('সংরক্ষণ সফল হয়েছে ✅');
+  }
+}
+
+async function deleteRecord(id){
+  const r = records.find(x=>x.id===id);
+  if(!r) return;
+  if(!confirm(`আপনি কি নিশ্চিত "${r.name}" (${r.passport}) এন্ট্রিটি মুছে ফেলতে চান?`)) return;
+  records = records.filter(x=>x.id!==id);
+  const ok = await saveRecords();
+  if(ok){ renderTabs(); renderTable(); toast('এন্ট্রি মুছে ফেলা হয়েছে'); }
+}
+
+/* ================= HISTORY MODAL ================= */
+function openHistory(id){
+  const r = records.find(x=>x.id===id);
+  if(!r) return;
+  document.getElementById('histTitle').textContent = `হিস্টোরি — ${r.name} (${r.passport})`;
+  const wrap = document.getElementById('histList');
+  const hist = r.history || [];
+  if(hist.length===0){
+    wrap.innerHTML = `<div class="hist-empty">কোনো হিস্টোরি নেই</div>`;
+  }else{
+    wrap.innerHTML = hist.map(h=>`
+      <div class="hist-item">
+        <div class="hd"><span>${h.date||'—'}</span><span class="pill ${statusClass(h.status)}">${escapeHtml(h.status||'—')}</span></div>
+        <div class="bd">${escapeHtml(h.note||'')}
+          ${h.returnStatus ? `<br>রিটার্ন স্ট্যাটাস: <strong>${escapeHtml(h.returnStatus)}</strong>`:''}
+          ${h.fine ? `<br>জরিমানা: <strong>${escapeHtml(h.fine)}</strong>`:''}
+        </div>
+      </div>
+    `).join('');
+  }
+  document.getElementById('histOverlay').classList.add('show');
+}
+
+/* ================= GLOBAL SEARCH ================= */
+function runSearch(q){
+  const box = document.getElementById('searchResults');
+  q = q.trim().toUpperCase();
+  if(!q){ box.classList.remove('show'); box.innerHTML=''; return; }
+  const matches = records.filter(r =>
+    (r.passport||'').toUpperCase().includes(q) || (r.name||'').toUpperCase().includes(q)
+  ).slice(0,25);
+
+  if(matches.length===0){
+    box.innerHTML = `<div class="sr-empty">"${escapeHtml(q)}" এর জন্য কোনো ফলাফল পাওয়া যায়নি</div>`;
+  }else{
+    box.innerHTML = matches.map(r=>{
+      const office = OFFICES.find(o=>o.id===r.office);
+      return `<div class="sr-item" data-id="${r.id}" data-office="${r.office}">
+        <div class="nm">${escapeHtml(r.name)} <span class="passport-cell" style="font-size:11px;">${escapeHtml(r.passport)}</span></div>
+        <div class="meta">
+          <span>🏢 ${office?office.name:''}</span>
+          <span>📍 ${escapeHtml(r.destination||'—')}</span>
+          <span class="pill ${statusClass(r.status)}" style="padding:1px 8px;">${escapeHtml(r.status||'—')}</span>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  box.classList.add('show');
+
+  box.querySelectorAll('.sr-item').forEach(item=>{
+    item.onclick = ()=>{
+      const id = item.getAttribute('data-id');
+      activeOffice = item.getAttribute('data-office');
+      renderTabs();
+      renderTable();
+      box.classList.remove('show');
+      document.getElementById('globalSearch').value='';
+      setTimeout(()=>openHistory(id), 150);
+    };
+  });
+}
+
+/* ================= EXPORT / IMPORT ================= */
+function downloadFile(filename, content, type){
+  const blob = new Blob([content], {type});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function exportJson(){
+  const payload = {exportedAt:new Date().toISOString(), meta, records};
+  downloadFile(`agency-backup-${todayISO()}.json`, JSON.stringify(payload,null,2), 'application/json');
+  toast('ব্যাকআপ ডাউনলোড হয়েছে — এবার এটি Google Drive-এ আপলোড করুন');
+}
+
+function exportCsv(){
+  const header = ['OFFICE','SL','NAME','PASSPORT','DESTINATION','WAKALA','STATUS','AGENT','NOTE','RETURN STATUS','RETURN DATE','FINE','UPDATED AT'];
+  const rows = [header.join(',')];
+  OFFICES.forEach(o=>{
+    const list = records.filter(r=>r.office===o.id);
+    list.forEach((r,idx)=>{
+      const line = [o.name, idx+1, r.name, r.passport, r.destination, r.wakala, r.status, r.agent, r.note, r.returnStatus, r.returnDate, r.fine, r.updatedAt]
+        .map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',');
+      rows.push(line);
+    });
+  });
+  downloadFile(`agency-report-${todayISO()}.csv`, rows.join('\n'), 'text/csv');
+  toast('CSV ফাইল ডাউনলোড হয়েছে');
+}
+
+async function importJson(file){
+  try{
+    const text = await file.text();
+    const data = JSON.parse(text);
+    if(!data.records || !Array.isArray(data.records)) throw new Error('invalid format');
+    if(!confirm(`ইমপোর্ট ফাইলে ${data.records.length}টি এন্ট্রি আছে। এটি বর্তমান ডেটার সাথে যোগ হবে (ওভাররাইট হবে না)। এগিয়ে যেতে চান?`)) return;
+    const existingIds = new Set(records.map(r=>r.id));
+    let added = 0;
+    data.records.forEach(r=>{
+      if(!existingIds.has(r.id)){ records.push(r); added++; }
+    });
+    const ok = await saveRecords();
+    if(ok){ renderTabs(); renderTable(); toast(`${added}টি নতুন এন্ট্রি ইমপোর্ট হয়েছে ✅`); }
+  }catch(e){
+    toast('ইমপোর্ট ব্যর্থ হয়েছে — সঠিক ব্যাকআপ ফাইল নির্বাচন করুন', 'error');
+  }
+}
+
+/* ================= TOAST ================= */
+function toast(msg, type=''){
+  const wrap = document.getElementById('toastwrap');
+  const t = document.createElement('div');
+  t.className = 'toast' + (type==='error' ? ' error':'');
+  t.textContent = msg;
+  wrap.appendChild(t);
+  requestAnimationFrame(()=>t.classList.add('show'));
+  setTimeout(()=>{ t.classList.remove('show'); setTimeout(()=>t.remove(),300); }, 3200);
+}
+
+/* ================= GOOGLE SHEET LIVE SYNC (via Apps Script Web App) ================= */
+let sheetWebAppUrl = '';
+
+async function loadDriveConfig(){
+  try{
+    const c = await window.storage.get('sheet_webapp_url', true);
+    sheetWebAppUrl = c ? JSON.parse(c.value).url : '';
+  }catch(e){ sheetWebAppUrl = ''; }
+  document.getElementById('sheetUrl').value = sheetWebAppUrl;
+  updateDriveStatusUI();
+}
+
+function updateDriveStatusUI(){
+  const label = document.getElementById('driveStatusLabel');
+  const box = document.getElementById('driveStatusBox');
+  if(sheetWebAppUrl){
+    label.textContent = 'সংযুক্ত ✅';
+    box.textContent = 'Google Sheet-এ লাইভ সিঙ্ক চালু আছে।';
+    document.getElementById('btnManualDriveSave').disabled = false;
+  }else{
+    label.textContent = 'সংযুক্ত নয়';
+    box.textContent = 'এখনও কনফিগার করা হয়নি — নিচের ধাপ অনুসরণ করুন।';
+    document.getElementById('btnManualDriveSave').disabled = true;
+  }
+}
+
+async function saveClientId(){
+  const val = document.getElementById('sheetUrl').value.trim();
+  if(!val){ toast('Web App URL লিখুন', 'error'); return; }
+  sheetWebAppUrl = val;
+  try{ await window.storage.set('sheet_webapp_url', JSON.stringify({url:val}), true); }catch(e){}
+  updateDriveStatusUI();
+  toast('লিংক সংরক্ষণ হয়েছে ✅');
+  await driveSave();
+}
+
+async function driveSave(){
+  if(!sheetWebAppUrl) return;
+  try{
+    const payload = JSON.stringify({exportedAt:new Date().toISOString(), meta, records});
+    await fetch(sheetWebAppUrl, {
+      method:'POST',
+      mode:'no-cors',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: payload
+    });
+  }catch(e){ /* local cloud save already succeeded, silently skip */ }
+}
+
+async function driveAutoSaveIfOn(){
+  const box = document.getElementById('driveAutoSave');
+  if(sheetWebAppUrl && box && box.checked) await driveSave();
+}
+
+/* ================= INIT ================= */
+async function init(){
+  fillOfficeSelect();
+  await loadAll();
+  document.getElementById('reportDate').value = meta.reportDate || todayISO();
+  renderTabs();
+  renderTable();
+  document.getElementById('loadingScreen').classList.add('hide');
+
+  document.getElementById('btnAdd').onclick = openAdd;
+  document.getElementById('closeEdit').onclick = closeEditModal;
+  document.getElementById('cancelEdit').onclick = closeEditModal;
+  document.getElementById('saveEdit').onclick = saveEditForm;
+  document.getElementById('editOverlay').addEventListener('click', e=>{ if(e.target.id==='editOverlay') closeEditModal(); });
+
+  document.getElementById('closeHist').onclick = ()=>document.getElementById('histOverlay').classList.remove('show');
+  document.getElementById('histOverlay').addEventListener('click', e=>{ if(e.target.id==='histOverlay') e.currentTarget.classList.remove('show'); });
+
+  document.getElementById('globalSearch').addEventListener('input', e=>runSearch(e.target.value));
+  document.addEventListener('click', e=>{
+    if(!e.target.closest('.searchwrap')) document.getElementById('searchResults').classList.remove('show');
+  });
+
+  document.getElementById('reportDate').addEventListener('change', async e=>{
+    meta.reportDate = e.target.value;
+    await saveMeta();
+    renderTable();
+    toast('রিপোর্ট তারিখ আপডেট হয়েছে');
+  });
+
+  document.getElementById('btnPrint').onclick = ()=>window.print();
+  document.getElementById('btnPrintAll').onclick = ()=>window.print();
+
+  document.getElementById('btnDrive').onclick = ()=>document.getElementById('driveOverlay').classList.add('show');
+  document.getElementById('closeDrive').onclick = ()=>document.getElementById('driveOverlay').classList.remove('show');
+  document.getElementById('driveOverlay').addEventListener('click', e=>{ if(e.target.id==='driveOverlay') e.currentTarget.classList.remove('show'); });
+  document.getElementById('btnSaveClientId').onclick = saveClientId;
+  document.getElementById('btnManualDriveSave').onclick = async ()=>{ await driveSave(); toast('Google Sheet-এ সিঙ্ক পাঠানো হয়েছে ✅'); };
+  document.getElementById('btnCopyScript').onclick = async ()=>{
+    const code = document.getElementById('appsScriptCode').textContent;
+    try{ await navigator.clipboard.writeText(code); toast('কোড কপি হয়েছে ✅'); }
+    catch(e){ toast('কপি করতে ব্যর্থ, ম্যানুয়ালি সিলেক্ট করে কপি করুন', 'error'); }
+  };
+  await loadDriveConfig();
+
+  document.getElementById('btnExport').onclick = exportJson;
+  document.getElementById('btnExportCsv').onclick = exportCsv;
+  document.getElementById('importFile').addEventListener('change', e=>{
+    if(e.target.files[0]) importJson(e.target.files[0]);
+    e.target.value = '';
+  });
+}
+init();
+</script>
+</body>
+</html>
