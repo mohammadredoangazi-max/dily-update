@@ -233,7 +233,7 @@ textarea{resize:vertical;min-height:56px;}
     <div style="overflow-x:auto;">
       <table>
         <thead>
-          <tr>
+          <tr id="tableHeadRow">
             <th style="width:36px;">SL</th>
             <th>NAME</th>
             <th>PASSPORT NO</th>
@@ -465,6 +465,7 @@ let records = [];
 let meta = {reportDate: todayISO()};
 let activeOffice = OFFICES[0].id;
 let editingId = null;
+let searchQuery = '';
 
 function todayISO(){ return new Date().toISOString().slice(0,10); }
 function uid(){ return 'r_' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
@@ -602,13 +603,13 @@ function renderTabs(){
     const el = document.createElement('div');
     el.className = 'tab' + (o.id===activeOffice ? ' active':'');
     el.innerHTML = `<span>${o.name}</span><span class="cnt">${count}</span>`;
-    el.onclick = ()=>{ activeOffice = o.id; renderTabs(); renderTable(); };
+    el.onclick = ()=>{ activeOffice = o.id; searchQuery=''; document.getElementById('globalSearch').value=''; renderTabs(); renderTable(); };
     bar.appendChild(el);
   });
   const allTab = document.createElement('div');
   allTab.className = 'tab' + (activeOffice==='all' ? ' active':'');
   allTab.innerHTML = `<span>📋 সব অফিস</span><span class="cnt">${records.length}</span>`;
-  allTab.onclick = ()=>{ activeOffice = 'all'; renderTabs(); renderTable(); };
+  allTab.onclick = ()=>{ activeOffice = 'all'; searchQuery=''; document.getElementById('globalSearch').value=''; renderTabs(); renderTable(); };
   bar.appendChild(allTab);
 }
 
@@ -666,9 +667,38 @@ function statusClass(text){
   return 'pill-neutral';
 }
 
+const NORMAL_HEAD = `
+  <th style="width:36px;">SL</th>
+  <th>NAME</th>
+  <th>PASSPORT NO</th>
+  <th>DESTINATION</th>
+  <th>WAKALA</th>
+  <th>CURRENT STATUS</th>
+  <th>AGENT</th>
+  <th>NOTE</th>
+  <th style="width:150px;">ACTION</th>
+`;
+const SEARCH_HEAD = `
+  <th style="width:36px;">SL</th>
+  <th>OFFICE</th>
+  <th>NAME</th>
+  <th>PASSPORT NO</th>
+  <th>DESTINATION</th>
+  <th>WAKALA</th>
+  <th>CURRENT STATUS</th>
+  <th>AGENT</th>
+  <th>NOTE</th>
+  <th style="width:150px;">ACTION</th>
+`;
+
 function renderTable(){
   document.getElementById('printDateLine').textContent = 'রিপোর্ট তারিখ: ' + (meta.reportDate||'—');
   document.getElementById('printDateLineAll').textContent = 'রিপোর্ট তারিখ: ' + (meta.reportDate||'—');
+
+  if(searchQuery.trim() !== ''){
+    renderSearchMode();
+    return;
+  }
 
   if(activeOffice==='all'){
     document.getElementById('singleOfficePanel').style.display = 'none';
@@ -678,6 +708,7 @@ function renderTable(){
   }
   document.getElementById('singleOfficePanel').style.display = '';
   document.getElementById('allOfficesPanel').style.display = 'none';
+  document.getElementById('tableHeadRow').innerHTML = NORMAL_HEAD;
 
   const office = OFFICES.find(o=>o.id===activeOffice);
   document.getElementById('officeTitle').textContent = office.name;
@@ -719,6 +750,69 @@ function renderTable(){
       if(act==='hist') openHistory(id);
     };
   });
+}
+
+function renderSearchMode(){
+  document.getElementById('singleOfficePanel').style.display = '';
+  document.getElementById('allOfficesPanel').style.display = 'none';
+  document.getElementById('tableHeadRow').innerHTML = SEARCH_HEAD;
+
+  const qRaw = searchQuery.trim();
+  const q = qRaw.toUpperCase();
+  const exact = records.filter(r => (r.passport||'').toUpperCase()===q || (r.name||'').toUpperCase()===q);
+  const matches = exact.length>0 ? exact : records.filter(r=>
+    (r.passport||'').toUpperCase().includes(q) || (r.name||'').toUpperCase().includes(q)
+  );
+
+  document.getElementById('officeTitle').textContent = `🔍 সার্চ ফলাফল: "${qRaw}"`;
+  document.getElementById('officeSub').innerHTML = `${matches.length}টি ফলাফল পাওয়া গেছে — <a href="#" id="clearSearchLink" style="color:var(--navy-800);text-decoration:underline;font-weight:600;">✕ সার্চ বন্ধ করে সব দেখুন</a>`;
+
+  const tbody = document.getElementById('tableBody');
+  tbody.innerHTML = '';
+  if(matches.length===0){
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="10">"${escapeHtml(qRaw)}" এর সাথে মিলে এমন কোনো এন্ট্রি পাওয়া যায়নি।</td></tr>`;
+  }else{
+    matches.forEach((r,idx)=>{
+      const office = OFFICES.find(o=>o.id===r.office);
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="sl-cell">${idx+1}</td>
+        <td>${office ? escapeHtml(office.name) : escapeHtml(r.office)}</td>
+        <td><strong>${escapeHtml(r.name||'—')}</strong></td>
+        <td><span class="passport-cell">${escapeHtml((r.passport||'—').toUpperCase())}</span></td>
+        <td>${escapeHtml(r.destination||'—')}</td>
+        <td>${r.wakala ? `<span class="pill ${statusClass(r.wakala)}">${r.wakala}</span>` : '—'}</td>
+        <td>${r.status ? `<span class="pill ${statusClass(r.status)}">${escapeHtml(r.status)}</span>` : '—'}</td>
+        <td>${escapeHtml(r.agent||'—')}</td>
+        <td class="note-cell">${escapeHtml(r.note||'—')}</td>
+        <td class="actions-cell">
+          <button class="btn btn-outline btn-sm" data-act="edit" data-id="${r.id}">✏️</button>
+          <button class="btn btn-ghost btn-sm" data-act="hist" data-id="${r.id}" style="background:var(--sand-200);color:var(--navy-800);">🕒</button>
+          <button class="btn btn-danger btn-sm" data-act="del" data-id="${r.id}">🗑️</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+    tbody.querySelectorAll('button[data-act]').forEach(btn=>{
+      btn.onclick = ()=>{
+        const id = btn.getAttribute('data-id');
+        const act = btn.getAttribute('data-act');
+        if(act==='edit') openEdit(id);
+        if(act==='del') deleteRecord(id);
+        if(act==='hist') openHistory(id);
+      };
+    });
+  }
+
+  const clearLink = document.getElementById('clearSearchLink');
+  if(clearLink){
+    clearLink.onclick = (e)=>{
+      e.preventDefault();
+      document.getElementById('globalSearch').value = '';
+      searchQuery = '';
+      renderTable();
+    };
+  }
 }
 
 function escapeHtml(s){
@@ -801,6 +895,8 @@ async function saveEditForm(){
   if(ok){
     closeEditModal();
     activeOffice = office;
+    searchQuery = '';
+    document.getElementById('globalSearch').value = '';
     renderTabs();
     renderTable();
     toast('সংরক্ষণ সফল হয়েছে ✅');
@@ -839,48 +935,7 @@ function openHistory(id){
   document.getElementById('histOverlay').classList.add('show');
 }
 
-/* ================= GLOBAL SEARCH ================= */
-function runSearch(q){
-  const box = document.getElementById('searchResults');
-  q = q.trim().toUpperCase();
-  if(!q){ box.classList.remove('show'); box.innerHTML=''; return; }
-
-  const exactMatch = records.find(r => (r.passport||'').toUpperCase() === q);
-  const matches = exactMatch
-    ? [exactMatch]
-    : records.filter(r =>
-        (r.passport||'').toUpperCase().includes(q) || (r.name||'').toUpperCase().includes(q)
-      ).slice(0,25);
-
-  if(matches.length===0){
-    box.innerHTML = `<div class="sr-empty">"${escapeHtml(q)}" এর জন্য কোনো ফলাফল পাওয়া যায়নি</div>`;
-  }else{
-    box.innerHTML = matches.map(r=>{
-      const office = OFFICES.find(o=>o.id===r.office);
-      return `<div class="sr-item" data-id="${r.id}" data-office="${r.office}">
-        <div class="nm">${escapeHtml(r.name)} <span class="passport-cell" style="font-size:11px;">${escapeHtml(r.passport)}</span></div>
-        <div class="meta">
-          <span>🏢 ${office?office.name:''}</span>
-          <span>📍 ${escapeHtml(r.destination||'—')}</span>
-          <span class="pill ${statusClass(r.status)}" style="padding:1px 8px;">${escapeHtml(r.status||'—')}</span>
-        </div>
-      </div>`;
-    }).join('');
-  }
-  box.classList.add('show');
-
-  box.querySelectorAll('.sr-item').forEach(item=>{
-    item.onclick = ()=>{
-      const id = item.getAttribute('data-id');
-      activeOffice = item.getAttribute('data-office');
-      renderTabs();
-      renderTable();
-      box.classList.remove('show');
-      document.getElementById('globalSearch').value='';
-      setTimeout(()=>openHistory(id), 150);
-    };
-  });
-}
+/* ================= GLOBAL SEARCH (whole-dashboard filter, no dropdown) ================= */
 
 /* ================= EXPORT / IMPORT ================= */
 function downloadFile(filename, content, type){
@@ -1018,9 +1073,9 @@ async function init(){
   document.getElementById('closeHist').onclick = ()=>document.getElementById('histOverlay').classList.remove('show');
   document.getElementById('histOverlay').addEventListener('click', e=>{ if(e.target.id==='histOverlay') e.currentTarget.classList.remove('show'); });
 
-  document.getElementById('globalSearch').addEventListener('input', e=>runSearch(e.target.value));
-  document.addEventListener('click', e=>{
-    if(!e.target.closest('.searchwrap')) document.getElementById('searchResults').classList.remove('show');
+  document.getElementById('globalSearch').addEventListener('input', e=>{
+    searchQuery = e.target.value;
+    renderTable();
   });
 
   document.getElementById('reportDate').addEventListener('change', async e=>{
