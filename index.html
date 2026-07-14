@@ -138,6 +138,12 @@ textarea{resize:vertical;min-height:56px;}
 .storage-note{font-size:11.5px;color:var(--ink-600);padding:10px 20px 0;max-width:1400px;margin:0 auto;}
 .storage-note b{color:var(--navy-800);}
 
+.site-footer{text-align:center;padding:22px 16px 26px;margin-top:20px;border-top:1px solid var(--sand-200);background:var(--sand-100);}
+.site-footer p{margin:0;font-size:12.5px;color:var(--ink-600);}
+.site-footer a{color:var(--navy-800);text-decoration:none;font-weight:600;}
+.site-footer a:hover{text-decoration:underline;}
+.print-timestamp{display:none;}
+
 @media(max-width:720px){
   .form-grid{grid-template-columns:1fr;}
   thead th{position:static;}
@@ -163,6 +169,7 @@ textarea{resize:vertical;min-height:56px;}
   .passport-cell{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
   .all-office-block{page-break-inside:avoid;}
   .print-header{display:block !important;text-align:center;margin-bottom:14px;}
+  .print-timestamp{display:block !important;font-size:11px;color:var(--ink-600);margin-top:2px;}
 }
 .print-header{display:none;}
 .print-header h2{font-family:'Hind Siliguri',sans-serif;color:var(--navy-900);margin:0 0 4px;}
@@ -219,6 +226,7 @@ textarea{resize:vertical;min-height:56px;}
     <div class="print-header">
       <h2>মিম ইন্টারন্যাশনাল — ডেইলি আপডেট রিপোর্ট</h2>
       <p id="printDateLine"></p>
+      <p id="printTimestamp" class="print-timestamp"></p>
     </div>
     <div class="panel-head">
       <div>
@@ -255,6 +263,7 @@ textarea{resize:vertical;min-height:56px;}
     <div class="print-header">
       <h2>মিম ইন্টারন্যাশনাল — সকল অফিসের ডেইলি আপডেট রিপোর্ট</h2>
       <p id="printDateLineAll"></p>
+      <p id="printTimestampAll" class="print-timestamp"></p>
     </div>
     <div class="panel-head">
       <div>
@@ -359,6 +368,10 @@ textarea{resize:vertical;min-height:56px;}
     </div>
   </div>
 </div>
+
+<footer class="site-footer">
+  <p>Designed &amp; Developed by <strong>Mohammad Redoan</strong> &nbsp;|&nbsp; Phone/Mob: <a href="tel:01748723661">01748723661</a> &nbsp;|&nbsp; Email: <a href="mailto:mohammadredoangazi@gmail.com">mohammadredoangazi@gmail.com</a></p>
+</footer>
 
 <div id="toastwrap"></div>
 
@@ -469,6 +482,12 @@ let searchQuery = '';
 
 function todayISO(){ return new Date().toISOString().slice(0,10); }
 function uid(){ return 'r_' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function formatNowBn(){
+  const d = new Date();
+  const dateStr = d.toLocaleDateString('en-GB', {day:'2-digit', month:'2-digit', year:'numeric'});
+  const timeStr = d.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit', hour12:true});
+  return `${dateStr}, ${timeStr}`;
+}
 
 /* ================= SEED DATA (from 7/8/2026 sheet) ================= */
 function seedRecords(){
@@ -1088,8 +1107,14 @@ async function init(){
     if(activeOffice==='all') renderAllOffices();
   });
 
-  document.getElementById('btnPrint').onclick = ()=>window.print();
-  document.getElementById('btnPrintAll').onclick = ()=>window.print();
+  document.getElementById('btnPrint').onclick = ()=>{
+    document.getElementById('printTimestamp').textContent = 'প্রিন্ট/PDF তৈরি হয়েছে: ' + formatNowBn();
+    window.print();
+  };
+  document.getElementById('btnPrintAll').onclick = ()=>{
+    document.getElementById('printTimestampAll').textContent = 'প্রিন্ট/PDF তৈরি হয়েছে: ' + formatNowBn();
+    window.print();
+  };
 
   document.getElementById('btnDrive').onclick = ()=>document.getElementById('driveOverlay').classList.add('show');
   document.getElementById('closeDrive').onclick = ()=>document.getElementById('driveOverlay').classList.remove('show');
