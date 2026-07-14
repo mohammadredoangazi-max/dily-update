@@ -259,9 +259,14 @@ textarea{resize:vertical;min-height:56px;}
     <div class="panel-head">
       <div>
         <h2>সব অফিস — একসাথে ভিউ</h2>
-        <div class="sub">সবগুলো অফিসের তালিকা একসাথে — প্রিন্ট করলে সব একবারে ছাপা হবে</div>
+        <div class="sub" id="allOfficesSummary">সবগুলো অফিসের তালিকা একসাথে — প্রিন্ট করলে সব একবারে ছাপা হবে</div>
       </div>
-      <button class="btn btn-outline" id="btnPrintAll">🖨️ সব প্রিন্ট করুন</button>
+      <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-600);white-space:nowrap;">
+          <input type="checkbox" id="onlyTodayAll" checked style="width:auto;"> শুধু নির্বাচিত তারিখে আপডেট হওয়া এন্ট্রি দেখাও
+        </label>
+        <button class="btn btn-outline" id="btnPrintAll">🖨️ সব প্রিন্ট করুন</button>
+      </div>
     </div>
     <div style="padding:16px;" id="allOfficesBody"></div>
   </div>
@@ -406,6 +411,8 @@ textarea{resize:vertical;min-height:56px;}
 }
 
 function doPost(e) {
+  var lock = LockService.getScriptLock();
+  lock.waitLock(20000);
   var backupSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Backup') || SpreadsheetApp.getActiveSpreadsheet().insertSheet('Backup');
   try {
     var raw = e.postData.contents;
@@ -415,6 +422,8 @@ function doPost(e) {
     backupSheet.getRange(1,2).setValue('OK - ' + new Date());
   } catch (err) {
     backupSheet.getRange(1,2).setValue('ERROR: ' + err.message);
+  } finally {
+    lock.releaseLock();
   }
   return ContentService.createTextOutput(JSON.stringify({status:'ok'})).setMimeType(ContentService.MimeType.JSON);
 }
@@ -508,10 +517,42 @@ function seedRecords(){
   ];
 }
 
-/* ================= STORAGE ================= */
+/* ================= STORAGE (portable: Claude window.storage OR localStorage) ================= */
+const hasClaudeStorage = (typeof window.storage !== 'undefined' && window.storage && typeof window.storage.get === 'function');
+
+async function storageGet(key, shared){
+  if(hasClaudeStorage){
+    try{ return await window.storage.get(key, shared); }catch(e){ return null; }
+  }
+  try{
+    const v = localStorage.getItem(key);
+    return v ? {key, value:v, shared} : null;
+  }catch(e){ return null; }
+}
+async function storageSet(key, value, shared){
+  if(hasClaudeStorage){
+    try{ return await window.storage.set(key, value, shared); }catch(e){ return null; }
+  }
+  try{ localStorage.setItem(key, value); return {key, value, shared}; }
+  catch(e){ return null; }
+}
+
+async function fetchFromSheet(){
+  if(!sheetWebAppUrl) return null;
+  try{
+    const res = await fetch(sheetWebAppUrl, {method:'GET'});
+    if(!res.ok) return null;
+    const text = await res.text();
+    if(!text || text.trim()==='{}') return null;
+    const data = JSON.parse(text);
+    if(data && Array.isArray(data.records)) return data;
+    return null;
+  }catch(e){ return null; }
+}
+
 async function loadAll(){
   try{
-    const r = await window.storage.get(RECORDS_KEY, true);
+    const r = await storageGet(RECORDS_KEY, true);
     records = r ? JSON.parse(r.value) : seedRecords();
     if(!r){ await saveRecords(); }
   }catch(e){
@@ -519,15 +560,27 @@ async function loadAll(){
     try{ await saveRecords(); }catch(e2){}
   }
   try{
-    const m = await window.storage.get(META_KEY, true);
+    const m = await storageGet(META_KEY, true);
     meta = m ? JSON.parse(m.value) : {reportDate: todayISO()};
   }catch(e){
     meta = {reportDate: todayISO()};
   }
+  // If this page is hosted outside Claude (e.g. GitHub Pages), the only real
+  // shared source of truth across browsers/devices is the connected Google
+  // Sheet — pull the latest copy from there so everyone sees the same data.
+  if(!hasClaudeStorage && sheetWebAppUrl){
+    const remote = await fetchFromSheet();
+    if(remote){
+      records = remote.records;
+      if(remote.meta) meta = remote.meta;
+      await storageSet(RECORDS_KEY, JSON.stringify(records), true);
+      await storageSet(META_KEY, JSON.stringify(meta), true);
+    }
+  }
 }
 async function saveRecords(){
   try{
-    const res = await window.storage.set(RECORDS_KEY, JSON.stringify(records), true);
+    const res = await storageSet(RECORDS_KEY, JSON.stringify(records), true);
     if(!res) throw new Error('no result');
     driveAutoSaveIfOn();
     return true;
@@ -537,7 +590,7 @@ async function saveRecords(){
   }
 }
 async function saveMeta(){
-  try{ await window.storage.set(META_KEY, JSON.stringify(meta), true); driveAutoSaveIfOn(); }catch(e){}
+  try{ await storageSet(META_KEY, JSON.stringify(meta), true); driveAutoSaveIfOn(); }catch(e){}
 }
 
 /* ================= RENDER ================= */
@@ -560,15 +613,19 @@ function renderTabs(){
 }
 
 function renderAllOffices(){
+  const onlyToday = document.getElementById('onlyTodayAll').checked;
   const wrap = document.getElementById('allOfficesBody');
   wrap.innerHTML = '';
+  let totalShown = 0;
   OFFICES.forEach(o=>{
-    const list = records.filter(r=>r.office===o.id);
+    let list = records.filter(r=>r.office===o.id);
+    if(onlyToday) list = list.filter(r=>r.updatedAt === meta.reportDate);
+    totalShown += list.length;
     const block = document.createElement('div');
     block.className = 'all-office-block';
     let rowsHtml = '';
     if(list.length===0){
-      rowsHtml = `<tr class="empty-row"><td colspan="8">কোনো এন্ট্রি নেই</td></tr>`;
+      rowsHtml = `<tr class="empty-row"><td colspan="8">${onlyToday ? 'এই তারিখে এই অফিসে কোনো আপডেট হয়নি' : 'কোনো এন্ট্রি নেই'}</td></tr>`;
     }else{
       rowsHtml = list.map((r,idx)=>`
         <tr>
@@ -595,6 +652,9 @@ function renderAllOffices(){
       </div>`;
     wrap.appendChild(block);
   });
+  document.getElementById('allOfficesSummary').textContent = onlyToday
+    ? `রিপোর্ট তারিখ ${meta.reportDate||'—'}-এ যত এন্ট্রি আপডেট হয়েছে, শুধু তাই দেখানো হচ্ছে — মোট ${totalShown}টি। (পুরোনো এন্ট্রি যেগুলো এই সিস্টেমে যোগ করার আগেই ছিল, সেগুলোর তারিখ ঠিকমতো মিলবে না — সেসব দেখতে উপরের চেকবক্স আনচেক করুন)`
+    : `সবগুলো অফিসের সব এন্ট্রি — মোট ${totalShown}টি`;
 }
 
 function statusClass(text){
@@ -784,9 +844,13 @@ function runSearch(q){
   const box = document.getElementById('searchResults');
   q = q.trim().toUpperCase();
   if(!q){ box.classList.remove('show'); box.innerHTML=''; return; }
-  const matches = records.filter(r =>
-    (r.passport||'').toUpperCase().includes(q) || (r.name||'').toUpperCase().includes(q)
-  ).slice(0,25);
+
+  const exactMatch = records.find(r => (r.passport||'').toUpperCase() === q);
+  const matches = exactMatch
+    ? [exactMatch]
+    : records.filter(r =>
+        (r.passport||'').toUpperCase().includes(q) || (r.name||'').toUpperCase().includes(q)
+      ).slice(0,25);
 
   if(matches.length===0){
     box.innerHTML = `<div class="sr-empty">"${escapeHtml(q)}" এর জন্য কোনো ফলাফল পাওয়া যায়নি</div>`;
@@ -879,13 +943,16 @@ function toast(msg, type=''){
 }
 
 /* ================= GOOGLE SHEET LIVE SYNC (via Apps Script Web App) ================= */
-let sheetWebAppUrl = '';
+// Default shared Web App URL — every visitor auto-connects to this same Sheet.
+// (A user can still override it per-browser from the Sheet Sync panel if ever needed.)
+const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycby4MGJidF3MZNstTkja9kd6vxiROz6hFb7Gr9zWxDh5P1vB23VTldTyd7IsgWhVa_poFQ/exec';
+let sheetWebAppUrl = DEFAULT_SHEET_URL;
 
 async function loadDriveConfig(){
   try{
-    const c = await window.storage.get('sheet_webapp_url', true);
-    sheetWebAppUrl = c ? JSON.parse(c.value).url : '';
-  }catch(e){ sheetWebAppUrl = ''; }
+    const c = await storageGet('sheet_webapp_url', true);
+    sheetWebAppUrl = c ? JSON.parse(c.value).url : DEFAULT_SHEET_URL;
+  }catch(e){ sheetWebAppUrl = DEFAULT_SHEET_URL; }
   document.getElementById('sheetUrl').value = sheetWebAppUrl;
   updateDriveStatusUI();
 }
@@ -908,7 +975,7 @@ async function saveClientId(){
   const val = document.getElementById('sheetUrl').value.trim();
   if(!val){ toast('Web App URL লিখুন', 'error'); return; }
   sheetWebAppUrl = val;
-  try{ await window.storage.set('sheet_webapp_url', JSON.stringify({url:val}), true); }catch(e){}
+  try{ await storageSet('sheet_webapp_url', JSON.stringify({url:val}), true); }catch(e){}
   updateDriveStatusUI();
   toast('লিংক সংরক্ষণ হয়েছে ✅');
   await driveSave();
@@ -935,6 +1002,7 @@ async function driveAutoSaveIfOn(){
 /* ================= INIT ================= */
 async function init(){
   fillOfficeSelect();
+  await loadDriveConfig();
   await loadAll();
   document.getElementById('reportDate').value = meta.reportDate || todayISO();
   renderTabs();
@@ -961,6 +1029,9 @@ async function init(){
     renderTable();
     toast('রিপোর্ট তারিখ আপডেট হয়েছে');
   });
+  document.getElementById('onlyTodayAll').addEventListener('change', ()=>{
+    if(activeOffice==='all') renderAllOffices();
+  });
 
   document.getElementById('btnPrint').onclick = ()=>window.print();
   document.getElementById('btnPrintAll').onclick = ()=>window.print();
@@ -975,7 +1046,6 @@ async function init(){
     try{ await navigator.clipboard.writeText(code); toast('কোড কপি হয়েছে ✅'); }
     catch(e){ toast('কপি করতে ব্যর্থ, ম্যানুয়ালি সিলেক্ট করে কপি করুন', 'error'); }
   };
-  await loadDriveConfig();
 
   document.getElementById('btnExport').onclick = exportJson;
   document.getElementById('btnExportCsv').onclick = exportCsv;
