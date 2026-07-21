@@ -279,6 +279,22 @@ textarea{resize:vertical;min-height:56px;}
     </div>
     <div style="padding:16px;" id="allOfficesBody"></div>
   </div>
+
+  <!-- Flight OK grouped view -->
+  <div class="panel" id="flightPanel" style="display:none;margin-top:0;">
+    <div class="print-header">
+      <h2>মিম ইন্টারন্যাশনাল — ফ্লাইট OK রিপোর্ট</h2>
+      <p id="printTimestampFlight" class="print-timestamp"></p>
+    </div>
+    <div class="panel-head">
+      <div>
+        <h2>✈️ ফ্লাইট OK — অফিস অনুযায়ী</h2>
+        <div class="sub" id="flightSummary">যেসব এন্ট্রির CURRENT STATUS-এ "FLIGHT" লেখা আছে, শুধু সেগুলো অফিস অনুযায়ী ভাগ করে দেখানো হচ্ছে</div>
+      </div>
+      <button class="btn btn-outline" id="btnPrintFlight">🖨️ প্রিন্ট করুন</button>
+    </div>
+    <div style="padding:16px;" id="flightBody"></div>
+  </div>
 </div>
 
 <!-- Add/Edit Modal -->
@@ -630,6 +646,17 @@ function renderTabs(){
   allTab.innerHTML = `<span>📋 সব অফিস</span><span class="cnt">${records.length}</span>`;
   allTab.onclick = ()=>{ activeOffice = 'all'; searchQuery=''; document.getElementById('globalSearch').value=''; renderTabs(); renderTable(); };
   bar.appendChild(allTab);
+
+  const flightCount = records.filter(isFlightOk).length;
+  const flightTab = document.createElement('div');
+  flightTab.className = 'tab' + (activeOffice==='flight' ? ' active':'');
+  flightTab.innerHTML = `<span>✈️ ফ্লাইট OK</span><span class="cnt">${flightCount}</span>`;
+  flightTab.onclick = ()=>{ activeOffice = 'flight'; searchQuery=''; document.getElementById('globalSearch').value=''; renderTabs(); renderTable(); };
+  bar.appendChild(flightTab);
+}
+
+function isFlightOk(r){
+  return (r.status||'').toUpperCase().includes('FLIGHT');
 }
 
 function renderAllOffices(){
@@ -677,6 +704,46 @@ function renderAllOffices(){
     : `সবগুলো অফিসের সব এন্ট্রি — মোট ${totalShown}টি`;
 }
 
+function renderFlightView(){
+  const wrap = document.getElementById('flightBody');
+  wrap.innerHTML = '';
+  let totalShown = 0;
+  OFFICES.forEach(o=>{
+    const list = records.filter(r=>r.office===o.id && isFlightOk(r));
+    if(list.length===0) return;
+    totalShown += list.length;
+    const block = document.createElement('div');
+    block.className = 'all-office-block';
+    const rowsHtml = list.map((r,idx)=>`
+      <tr>
+        <td class="sl-cell">${idx+1}</td>
+        <td><strong>${escapeHtml(r.name||'—')}</strong></td>
+        <td><span class="passport-cell">${escapeHtml((r.passport||'—').toUpperCase())}</span></td>
+        <td>${escapeHtml(r.destination||'—')}</td>
+        <td>${r.wakala ? `<span class="pill ${statusClass(r.wakala)}">${r.wakala}</span>` : '—'}</td>
+        <td><span class="pill ${statusClass(r.status)}">${escapeHtml(r.status)}</span></td>
+        <td>${escapeHtml(r.agent||'—')}</td>
+        <td class="note-cell">${escapeHtml(r.note||'—')}</td>
+      </tr>`).join('');
+    block.innerHTML = `
+      <h3>${o.name} <span class="cnt2">${list.length} এন্ট্রি</span></h3>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead><tr>
+            <th style="width:32px;">SL</th><th>NAME</th><th>PASSPORT NO</th><th>DESTINATION</th>
+            <th>WAKALA</th><th>CURRENT STATUS</th><th>AGENT</th><th>NOTE</th>
+          </tr></thead>
+          <tbody>${rowsHtml}</tbody>
+        </table>
+      </div>`;
+    wrap.appendChild(block);
+  });
+  if(totalShown===0){
+    wrap.innerHTML = `<div class="empty-row" style="padding:34px;text-align:center;color:var(--ink-600);">এখনো কোনো এন্ট্রির CURRENT STATUS-এ "FLIGHT" লেখা নেই। কোনো এন্ট্রির স্ট্যাটাস "FLIGHT OK" দিয়ে আপডেট করলে সেটা এখানে অফিস অনুযায়ী দেখা যাবে।</div>`;
+  }
+  document.getElementById('flightSummary').textContent = `যেসব এন্ট্রির স্ট্যাটাসে "FLIGHT" আছে, অফিস অনুযায়ী ভাগ করে দেখানো হচ্ছে — মোট ${totalShown}টি`;
+}
+
 function statusClass(text){
   if(!text) return 'pill-neutral';
   const t = text.toUpperCase();
@@ -722,11 +789,20 @@ function renderTable(){
   if(activeOffice==='all'){
     document.getElementById('singleOfficePanel').style.display = 'none';
     document.getElementById('allOfficesPanel').style.display = '';
+    document.getElementById('flightPanel').style.display = 'none';
     renderAllOffices();
+    return;
+  }
+  if(activeOffice==='flight'){
+    document.getElementById('singleOfficePanel').style.display = 'none';
+    document.getElementById('allOfficesPanel').style.display = 'none';
+    document.getElementById('flightPanel').style.display = '';
+    renderFlightView();
     return;
   }
   document.getElementById('singleOfficePanel').style.display = '';
   document.getElementById('allOfficesPanel').style.display = 'none';
+  document.getElementById('flightPanel').style.display = 'none';
   document.getElementById('tableHeadRow').innerHTML = NORMAL_HEAD;
 
   const office = OFFICES.find(o=>o.id===activeOffice);
@@ -774,6 +850,7 @@ function renderTable(){
 function renderSearchMode(){
   document.getElementById('singleOfficePanel').style.display = '';
   document.getElementById('allOfficesPanel').style.display = 'none';
+  document.getElementById('flightPanel').style.display = 'none';
   document.getElementById('tableHeadRow').innerHTML = SEARCH_HEAD;
 
   const qRaw = searchQuery.trim();
@@ -1113,6 +1190,10 @@ async function init(){
   };
   document.getElementById('btnPrintAll').onclick = ()=>{
     document.getElementById('printTimestampAll').textContent = 'প্রিন্ট/PDF তৈরি হয়েছে: ' + formatNowBn();
+    window.print();
+  };
+  document.getElementById('btnPrintFlight').onclick = ()=>{
+    document.getElementById('printTimestampFlight').textContent = 'প্রিন্ট/PDF তৈরি হয়েছে: ' + formatNowBn();
     window.print();
   };
 
