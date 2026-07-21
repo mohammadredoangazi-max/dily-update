@@ -873,9 +873,8 @@ function renderSearchMode(){
 
   const qRaw = searchQuery.trim();
   const q = qRaw.toUpperCase();
-  const pool = records.filter(r=>!r.flightOk);
-  const exact = pool.filter(r => (r.passport||'').toUpperCase()===q || (r.name||'').toUpperCase()===q);
-  const matches = exact.length>0 ? exact : pool.filter(r=>
+  const exact = records.filter(r => (r.passport||'').toUpperCase()===q || (r.name||'').toUpperCase()===q);
+  const matches = exact.length>0 ? exact : records.filter(r=>
     (r.passport||'').toUpperCase().includes(q) || (r.name||'').toUpperCase().includes(q)
   );
 
@@ -892,7 +891,7 @@ function renderSearchMode(){
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td class="sl-cell">${idx+1}</td>
-        <td>${office ? escapeHtml(office.name) : escapeHtml(r.office)}</td>
+        <td>${office ? escapeHtml(office.name) : escapeHtml(r.office)}${r.flightOk ? ' <span class="pill pill-green">✈️ ফ্লাইট OK</span>' : ''}</td>
         <td><strong>${escapeHtml(r.name||'—')}</strong></td>
         <td><span class="passport-cell">${escapeHtml((r.passport||'—').toUpperCase())}</span></td>
         <td>${escapeHtml(r.destination||'—')}</td>
