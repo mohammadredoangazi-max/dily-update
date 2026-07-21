@@ -338,6 +338,10 @@ textarea{resize:vertical;min-height:56px;}
           <label>এজেন্ট (AGENT)</label>
           <input type="text" id="f_agent" placeholder="এজেন্টের নাম">
         </div>
+        <div class="full" style="display:flex;align-items:center;gap:10px;background:var(--sand-100);padding:12px;border-radius:8px;">
+          <input type="checkbox" id="f_flightOk" style="width:auto;flex:0 0 auto;">
+          <label for="f_flightOk" style="margin:0;font-weight:600;color:var(--navy-900);">✈️ ফ্লাইট কনফার্ম হয়েছে — টিক দিলে এই এন্ট্রি নিজের অফিসের তালিকা ও "সব অফিস" থেকে সরে গিয়ে শুধু "✈️ ফ্লাইট OK" তালিকায় থাকবে</label>
+        </div>
         <div class="full">
           <label>নোট (NOTE)</label>
           <textarea id="f_note" placeholder="বিস্তারিত নোট / স্ট্যাম্পিং ডেট ইত্যাদি"></textarea>
@@ -461,12 +465,12 @@ function writeReadableSheet(records) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName('All Records') || ss.insertSheet('All Records');
   sheet.clear();
-  var header = ['OFFICE','SL','NAME','PASSPORT','DESTINATION','WAKALA','STATUS','AGENT','NOTE','RETURN STATUS','RETURN DATE','FINE','UPDATED AT'];
+  var header = ['OFFICE','SL','NAME','PASSPORT','DESTINATION','WAKALA','STATUS','AGENT','NOTE','RETURN STATUS','RETURN DATE','FINE','FLIGHT OK','UPDATED AT'];
   sheet.appendRow(header);
   var counters = {};
   records.forEach(function(r){
     counters[r.office] = (counters[r.office] || 0) + 1;
-    sheet.appendRow([r.office, counters[r.office], r.name, r.passport, r.destination, r.wakala, r.status, r.agent, r.note, r.returnStatus, r.returnDate, r.fine, r.updatedAt]);
+    sheet.appendRow([r.office, counters[r.office], r.name, r.passport, r.destination, r.wakala, r.status, r.agent, r.note, r.returnStatus, r.returnDate, r.fine, (r.flightOk ? 'YES' : ''), r.updatedAt]);
   });
 }</pre>
         <button class="btn btn-outline btn-sm" id="btnCopyScript" style="margin-top:8px;">📋 কোড কপি করুন</button>
@@ -634,7 +638,7 @@ function renderTabs(){
   const bar = document.getElementById('tabbar');
   bar.innerHTML = '';
   OFFICES.forEach(o=>{
-    const count = records.filter(r=>r.office===o.id).length;
+    const count = records.filter(r=>r.office===o.id && !r.flightOk).length;
     const el = document.createElement('div');
     el.className = 'tab' + (o.id===activeOffice ? ' active':'');
     el.innerHTML = `<span>${o.name}</span><span class="cnt">${count}</span>`;
@@ -643,7 +647,7 @@ function renderTabs(){
   });
   const allTab = document.createElement('div');
   allTab.className = 'tab' + (activeOffice==='all' ? ' active':'');
-  allTab.innerHTML = `<span>📋 সব অফিস</span><span class="cnt">${records.length}</span>`;
+  allTab.innerHTML = `<span>📋 সব অফিস</span><span class="cnt">${records.filter(r=>!r.flightOk).length}</span>`;
   allTab.onclick = ()=>{ activeOffice = 'all'; searchQuery=''; document.getElementById('globalSearch').value=''; renderTabs(); renderTable(); };
   bar.appendChild(allTab);
 
@@ -656,7 +660,7 @@ function renderTabs(){
 }
 
 function isFlightOk(r){
-  return (r.status||'').toUpperCase().includes('FLIGHT');
+  return !!r.flightOk;
 }
 
 function renderAllOffices(){
@@ -665,7 +669,7 @@ function renderAllOffices(){
   wrap.innerHTML = '';
   let totalShown = 0;
   OFFICES.forEach(o=>{
-    let list = records.filter(r=>r.office===o.id);
+    let list = records.filter(r=>r.office===o.id && !r.flightOk);
     if(onlyToday) list = list.filter(r=>r.updatedAt === meta.reportDate);
     totalShown += list.length;
     const block = document.createElement('div');
@@ -721,9 +725,14 @@ function renderFlightView(){
         <td><span class="passport-cell">${escapeHtml((r.passport||'—').toUpperCase())}</span></td>
         <td>${escapeHtml(r.destination||'—')}</td>
         <td>${r.wakala ? `<span class="pill ${statusClass(r.wakala)}">${r.wakala}</span>` : '—'}</td>
-        <td><span class="pill ${statusClass(r.status)}">${escapeHtml(r.status)}</span></td>
+        <td>${r.status ? `<span class="pill ${statusClass(r.status)}">${escapeHtml(r.status)}</span>` : '—'}</td>
         <td>${escapeHtml(r.agent||'—')}</td>
         <td class="note-cell">${escapeHtml(r.note||'—')}</td>
+        <td class="actions-cell">
+          <button class="btn btn-outline btn-sm" data-act="edit" data-id="${r.id}">✏️</button>
+          <button class="btn btn-ghost btn-sm" data-act="hist" data-id="${r.id}" style="background:var(--sand-200);color:var(--navy-800);">🕒</button>
+          <button class="btn btn-danger btn-sm" data-act="del" data-id="${r.id}">🗑️</button>
+        </td>
       </tr>`).join('');
     block.innerHTML = `
       <h3>${o.name} <span class="cnt2">${list.length} এন্ট্রি</span></h3>
@@ -731,7 +740,7 @@ function renderFlightView(){
         <table>
           <thead><tr>
             <th style="width:32px;">SL</th><th>NAME</th><th>PASSPORT NO</th><th>DESTINATION</th>
-            <th>WAKALA</th><th>CURRENT STATUS</th><th>AGENT</th><th>NOTE</th>
+            <th>WAKALA</th><th>CURRENT STATUS</th><th>AGENT</th><th>NOTE</th><th style="width:150px;">ACTION</th>
           </tr></thead>
           <tbody>${rowsHtml}</tbody>
         </table>
@@ -739,9 +748,18 @@ function renderFlightView(){
     wrap.appendChild(block);
   });
   if(totalShown===0){
-    wrap.innerHTML = `<div class="empty-row" style="padding:34px;text-align:center;color:var(--ink-600);">এখনো কোনো এন্ট্রির CURRENT STATUS-এ "FLIGHT" লেখা নেই। কোনো এন্ট্রির স্ট্যাটাস "FLIGHT OK" দিয়ে আপডেট করলে সেটা এখানে অফিস অনুযায়ী দেখা যাবে।</div>`;
+    wrap.innerHTML = `<div class="empty-row" style="padding:34px;text-align:center;color:var(--ink-600);">এখনো কোনো এন্ট্রি "ফ্লাইট OK" হিসেবে চিহ্নিত করা হয়নি। কোনো এন্ট্রি এডিট করে "✈️ ফ্লাইট কনফার্ম হয়েছে" টিক দিলে সেটা এখানে অফিস অনুযায়ী দেখা যাবে।</div>`;
   }
-  document.getElementById('flightSummary').textContent = `যেসব এন্ট্রির স্ট্যাটাসে "FLIGHT" আছে, অফিস অনুযায়ী ভাগ করে দেখানো হচ্ছে — মোট ${totalShown}টি`;
+  wrap.querySelectorAll('button[data-act]').forEach(btn=>{
+    btn.onclick = ()=>{
+      const id = btn.getAttribute('data-id');
+      const act = btn.getAttribute('data-act');
+      if(act==='edit') openEdit(id);
+      if(act==='del') deleteRecord(id);
+      if(act==='hist') openHistory(id);
+    };
+  });
+  document.getElementById('flightSummary').textContent = `যেসব এন্ট্রি "✈️ ফ্লাইট কনফার্ম" হিসেবে চিহ্নিত করা হয়েছে, অফিস অনুযায়ী ভাগ করে দেখানো হচ্ছে — মোট ${totalShown}টি। এডিট করে টিক তুলে দিলে আবার নিজের অফিসের তালিকায় ফেরত যাবে।`;
 }
 
 function statusClass(text){
@@ -807,7 +825,7 @@ function renderTable(){
 
   const office = OFFICES.find(o=>o.id===activeOffice);
   document.getElementById('officeTitle').textContent = office.name;
-  const list = records.filter(r=>r.office===activeOffice);
+  const list = records.filter(r=>r.office===activeOffice && !r.flightOk);
   document.getElementById('officeSub').textContent = `মোট এন্ট্রি: ${list.length} · রিপোর্ট তারিখ: ${meta.reportDate||'—'}`;
 
   const tbody = document.getElementById('tableBody');
@@ -855,8 +873,9 @@ function renderSearchMode(){
 
   const qRaw = searchQuery.trim();
   const q = qRaw.toUpperCase();
-  const exact = records.filter(r => (r.passport||'').toUpperCase()===q || (r.name||'').toUpperCase()===q);
-  const matches = exact.length>0 ? exact : records.filter(r=>
+  const pool = records.filter(r=>!r.flightOk);
+  const exact = pool.filter(r => (r.passport||'').toUpperCase()===q || (r.name||'').toUpperCase()===q);
+  const matches = exact.length>0 ? exact : pool.filter(r=>
     (r.passport||'').toUpperCase().includes(q) || (r.name||'').toUpperCase().includes(q)
   );
 
@@ -927,6 +946,7 @@ function openAdd(){
   ['f_name','f_passport','f_destination','f_status','f_agent','f_note','f_returnDate','f_fine','f_updateNote'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('f_wakala').value='';
   document.getElementById('f_returnStatus').value='';
+  document.getElementById('f_flightOk').checked = false;
   document.getElementById('f_office').value = activeOffice;
   document.getElementById('editOverlay').classList.add('show');
 }
@@ -947,6 +967,7 @@ function openEdit(id){
   document.getElementById('f_returnStatus').value = r.returnStatus||'';
   document.getElementById('f_returnDate').value = r.returnDate||'';
   document.getElementById('f_fine').value = r.fine||'';
+  document.getElementById('f_flightOk').checked = !!r.flightOk;
   document.getElementById('f_updateNote').value = '';
   document.getElementById('editOverlay').classList.add('show');
 }
@@ -969,20 +990,25 @@ async function saveEditForm(){
   const returnStatus = document.getElementById('f_returnStatus').value;
   const returnDate = document.getElementById('f_returnDate').value;
   const fine = document.getElementById('f_fine').value.trim();
+  const flightOk = document.getElementById('f_flightOk').checked;
   const updateNote = document.getElementById('f_updateNote').value.trim();
   const now = todayISO();
 
   if(editingId){
     const r = records.find(x=>x.id===editingId);
     if(r){
-      Object.assign(r, {office,name,passport,destination,wakala,status,agent,note,returnStatus,returnDate,fine,updatedAt:now});
+      const wasFlightOk = !!r.flightOk;
+      Object.assign(r, {office,name,passport,destination,wakala,status,agent,note,returnStatus,returnDate,fine,flightOk,updatedAt:now});
       r.history = r.history || [];
-      r.history.unshift({date:now, status, note: updateNote || 'তথ্য আপডেট করা হয়েছে', returnStatus, fine});
+      let histNote = updateNote || 'তথ্য আপডেট করা হয়েছে';
+      if(!wasFlightOk && flightOk) histNote += ' — ✈️ ফ্লাইট OK চিহ্নিত করা হয়েছে';
+      if(wasFlightOk && !flightOk) histNote += ' — ✈️ ফ্লাইট OK থেকে সরিয়ে আবার অফিস তালিকায় ফেরত আনা হয়েছে';
+      r.history.unshift({date:now, status, note: histNote, returnStatus, fine});
     }
   }else{
     records.push({
       id:uid(), office,name,passport,destination,wakala,status,agent,note,
-      returnStatus,returnDate,fine, updatedAt:now, createdAt:now,
+      returnStatus,returnDate,fine,flightOk, updatedAt:now, createdAt:now,
       history:[{date:now, status, note: updateNote || 'নতুন এন্ট্রি তৈরি করা হয়েছে', returnStatus, fine}]
     });
   }
@@ -990,7 +1016,7 @@ async function saveEditForm(){
   const ok = await saveRecords();
   if(ok){
     closeEditModal();
-    activeOffice = office;
+    activeOffice = flightOk ? 'flight' : office;
     searchQuery = '';
     document.getElementById('globalSearch').value = '';
     renderTabs();
@@ -1050,12 +1076,12 @@ function exportJson(){
 }
 
 function exportCsv(){
-  const header = ['OFFICE','SL','NAME','PASSPORT','DESTINATION','WAKALA','STATUS','AGENT','NOTE','RETURN STATUS','RETURN DATE','FINE','UPDATED AT'];
+  const header = ['OFFICE','SL','NAME','PASSPORT','DESTINATION','WAKALA','STATUS','AGENT','NOTE','RETURN STATUS','RETURN DATE','FINE','FLIGHT OK','UPDATED AT'];
   const rows = [header.join(',')];
   OFFICES.forEach(o=>{
     const list = records.filter(r=>r.office===o.id);
     list.forEach((r,idx)=>{
-      const line = [o.name, idx+1, r.name, r.passport, r.destination, r.wakala, r.status, r.agent, r.note, r.returnStatus, r.returnDate, r.fine, r.updatedAt]
+      const line = [o.name, idx+1, r.name, r.passport, r.destination, r.wakala, r.status, r.agent, r.note, r.returnStatus, r.returnDate, r.fine, (r.flightOk?'YES':''), r.updatedAt]
         .map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',');
       rows.push(line);
     });
