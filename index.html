@@ -1180,7 +1180,12 @@ async function init(){
   fillOfficeSelect();
   await loadDriveConfig();
   await loadAll();
-  document.getElementById('reportDate').value = meta.reportDate || todayISO();
+  const today = todayISO();
+  if(meta.reportDate !== today){
+    meta.reportDate = today;
+    saveMeta();
+  }
+  document.getElementById('reportDate').value = meta.reportDate;
   renderTabs();
   renderTable();
   document.getElementById('loadingScreen').classList.add('hide');
